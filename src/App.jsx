@@ -12,6 +12,7 @@ import SupportModal from './components/SupportModal';
 import UserRegisterModal from './components/UserRegisterModal';
 import GratitudeRoulette from './components/GratitudeRoulette';
 import AdminGratitudeModal from './components/AdminGratitudeModal';
+import OnlineUsersBox from './components/OnlineUsersBox';
 import { initialCases, initialNews } from './data/casesData';
 import { 
   Search, Filter, ShieldAlert, Sparkles, MapPin, Flame, MessageSquare, 
@@ -465,6 +466,13 @@ export default function App() {
           onOpenSupport={() => setIsSupportOpen(true)}
         />
       )}
+
+      {/* Floating Dark Box: Online Community Users with Green Dots */}
+      <OnlineUsersBox 
+        userProfile={userProfile} 
+        onOpenRegister={() => setIsRegisterOpen(true)}
+        isFloating={true}
+      />
 
       {/* User Register Modal (Seudónimo y País) */}
       <UserRegisterModal
