@@ -590,3 +590,143 @@ export function subscribePollVotes(pollId = 'poll-real-v1', onUpdate) {
     supabase.removeChannel(channel);
   };
 }
+
+// ============================================================================
+// 7. REGISTRO DE VISITANTES CON FECHA Y HORA DE INGRESO
+// ============================================================================
+
+export function getDeviceInfo() {
+  if (typeof window === 'undefined' || !navigator) {
+    return { device: 'Escritorio (PC)', browser: 'Navegador Web' };
+  }
+  const ua = navigator.userAgent || '';
+  let device = 'PC (Windows)';
+  if (/iPad|Tablet/i.test(ua)) device = 'Tablet';
+  else if (/iPhone/i.test(ua)) device = 'iPhone (iOS)';
+  else if (/Android.*Mobile/i.test(ua)) device = 'Móvil (Android)';
+  else if (/Android/i.test(ua)) device = 'Tablet (Android)';
+  else if (/Macintosh|Mac OS/i.test(ua)) device = 'Mac (macOS)';
+  else if (/Windows/i.test(ua)) device = 'PC (Windows)';
+  else if (/Linux/i.test(ua)) device = 'Linux (PC)';
+
+  let browser = 'Navegador Web';
+  if (/Edg\//i.test(ua)) browser = 'Microsoft Edge';
+  else if (/Chrome\//i.test(ua) && !/Edg/i.test(ua)) browser = 'Google Chrome';
+  else if (/Safari\//i.test(ua) && !/Chrome/i.test(ua)) browser = 'Apple Safari';
+  else if (/Firefox\//i.test(ua)) browser = 'Mozilla Firefox';
+  else if (/Opera|OPR\//i.test(ua)) browser = 'Opera';
+
+  return { device, browser };
+}
+
+export function getFormattedPeruDateTime(date = new Date()) {
+  try {
+    return new Intl.DateTimeFormat('es-PE', {
+      timeZone: 'America/Lima',
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true
+    }).format(date);
+  } catch (e) {
+    return date.toLocaleString('es-PE');
+  }
+}
+
+export async function recordVisitorToDb(visitorData) {
+  // 1. Respaldo local inmediato en el navegador
+  if (typeof window !== 'undefined') {
+    try {
+      const saved = localStorage.getItem('expediente_site_visitors_v1');
+      const list = saved ? JSON.parse(saved) : [];
+      const updated = [visitorData, ...list.filter(v => v.id !== visitorData.id)].slice(0, 150);
+      localStorage.setItem('expediente_site_visitors_v1', JSON.stringify(updated));
+    } catch (e) {}
+  }
+
+  // 2. Persistencia en la nube (Supabase)
+  if (isSupabaseConfigured && supabase) {
+    try {
+      const { error } = await supabase.from('site_visitors').insert({
+        id: visitorData.id,
+        visitor_alias: visitorData.visitorAlias,
+        country: visitorData.country || 'Perú',
+        country_flag: visitorData.flag || '🇵🇪',
+        device: visitorData.device,
+        browser: visitorData.browser,
+        formatted_date: visitorData.formattedDate
+      });
+      if (error) {
+        console.warn("[dbService] Nota sobre site_visitors en Supabase:", error.message);
+      }
+    } catch (e) {
+      console.warn("[dbService] Excepción registrando visitante:", e);
+    }
+  }
+}
+
+export async function fetchRecentVisitors(limit = 100) {
+  if (isSupabaseConfigured && supabase) {
+    try {
+      const { data, error } = await supabase
+        .from('site_visitors')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(limit);
+
+      if (!error && data && data.length > 0) {
+        return data.map(r => ({
+          id: r.id,
+          visitorAlias: r.visitor_alias,
+          country: r.country || 'Perú',
+          flag: r.country_flag || '🇵🇪',
+          device: r.device || 'Dispositivo',
+          browser: r.browser || 'Navegador Web',
+          formattedDate: r.formatted_date || new Date(r.created_at).toLocaleString('es-PE'),
+          createdAt: r.created_at
+        }));
+      }
+    } catch (e) {
+      console.warn("[dbService] Error leyendo visitantes de Supabase:", e);
+    }
+  }
+
+  // Respaldo de lectura desde localStorage si la tabla no está creada aún en la nube
+  if (typeof window !== 'undefined') {
+    try {
+      const saved = localStorage.getItem('expediente_site_visitors_v1');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {}
+  }
+  return [];
+}
+
+export function subscribeVisitors(onNewVisitor) {
+  if (!isSupabaseConfigured || !supabase) return () => {};
+
+  const channel = supabase
+    .channel('realtime:site_visitors')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'site_visitors' }, (payload) => {
+      const r = payload.new;
+      if (r) {
+        onNewVisitor({
+          id: r.id,
+          visitorAlias: r.visitor_alias,
+          country: r.country || 'Perú',
+          flag: r.country_flag || '🇵🇪',
+          device: r.device || 'Dispositivo',
+          browser: r.browser || 'Navegador Web',
+          formattedDate: r.formatted_date || new Date(r.created_at).toLocaleString('es-PE'),
+          createdAt: r.created_at
+        });
+      }
+    })
+    .subscribe();
+
+  return () => {
+    supabase.removeChannel(channel);
+  };
+}

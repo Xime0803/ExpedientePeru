@@ -87,6 +87,18 @@ CREATE TABLE IF NOT EXISTS public.community_poll_votes (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- 7. Tabla de Registro Histórico de Visitantes (Fecha y Hora de Ingreso)
+CREATE TABLE IF NOT EXISTS public.site_visitors (
+    id TEXT PRIMARY KEY,
+    visitor_alias TEXT NOT NULL,
+    country TEXT DEFAULT 'Perú',
+    country_flag TEXT DEFAULT '🇵🇪',
+    device TEXT,
+    browser TEXT,
+    formatted_date TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- HABILITAR ROW LEVEL SECURITY (RLS)
 ALTER TABLE public.community_supporters ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.case_comments ENABLE ROW LEVEL SECURITY;
@@ -94,6 +106,7 @@ ALTER TABLE public.chat_messages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.story_recommendations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.whistleblower_stories ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.community_poll_votes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.site_visitors ENABLE ROW LEVEL SECURITY;
 
 -- POLÍTICAS DE PERMISO TOTAL PÚBLICO (Lectura, Inserción y Actualización)
 DROP POLICY IF EXISTS "Public all supporters" ON public.community_supporters;
@@ -113,6 +126,9 @@ CREATE POLICY "Public all stories" ON public.whistleblower_stories FOR ALL USING
 
 DROP POLICY IF EXISTS "Public all votes" ON public.community_poll_votes;
 CREATE POLICY "Public all votes" ON public.community_poll_votes FOR ALL USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Public all visitors" ON public.site_visitors;
+CREATE POLICY "Public all visitors" ON public.site_visitors FOR ALL USING (true) WITH CHECK (true);
 
 -- HABILITAR REALTIME (Sincronización en vivo entre múltiples dispositivos)
 DO $$
@@ -143,5 +159,9 @@ BEGIN
 
   IF NOT EXISTS (SELECT 1 FROM pg_publication_tables WHERE pubname = 'supabase_realtime' AND tablename = 'community_poll_votes') THEN
     ALTER PUBLICATION supabase_realtime ADD TABLE public.community_poll_votes;
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM pg_publication_tables WHERE pubname = 'supabase_realtime' AND tablename = 'site_visitors') THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.site_visitors;
   END IF;
 END $$;

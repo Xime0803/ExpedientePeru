@@ -21,7 +21,10 @@ import {
   fetchAllCaseComments, 
   addCaseCommentToDb, 
   voteCaseCommentInDb, 
-  subscribeCaseComments 
+  subscribeCaseComments,
+  recordVisitorToDb,
+  getDeviceInfo,
+  getFormattedPeruDateTime
 } from './services/dbService';
 import { 
   Search, Filter, ShieldAlert, Sparkles, MapPin, Flame, MessageSquare, 
@@ -61,7 +64,44 @@ export default function App() {
   const handleSaveProfile = (profile) => {
     setUserProfile(profile);
     localStorage.setItem('expediente_user_profile_v3', JSON.stringify(profile));
+
+    // Registrar ingreso del usuario con su nuevo seudónimo
+    const { device, browser } = getDeviceInfo();
+    const updatedVisit = {
+      id: "vis-" + Date.now() + "-" + Math.random().toString(36).slice(2, 7),
+      visitorAlias: `@${profile.nickname}`,
+      country: profile.country || "Perú",
+      flag: profile.flag || "🇵🇪",
+      device,
+      browser,
+      formattedDate: getFormattedPeruDateTime(new Date()),
+      createdAt: new Date().toISOString()
+    };
+    recordVisitorToDb(updatedVisit);
   };
+
+  // REGISTRO DE VISITANTES CON FECHA Y HORA DE INGRESO
+  useEffect(() => {
+    const sessionKey = 'expediente_visit_session_active';
+    const isSessionLogged = sessionStorage.getItem(sessionKey);
+    
+    if (!isSessionLogged) {
+      const { device, browser } = getDeviceInfo();
+      const visitData = {
+        id: "vis-" + Date.now() + "-" + Math.random().toString(36).slice(2, 7),
+        visitorAlias: userProfile?.nickname ? `@${userProfile.nickname}` : ("Visitante #" + Math.floor(1000 + Math.random() * 9000)),
+        country: userProfile?.country || "Perú",
+        flag: userProfile?.flag || "🇵🇪",
+        device,
+        browser,
+        formattedDate: getFormattedPeruDateTime(new Date()),
+        createdAt: new Date().toISOString()
+      };
+
+      recordVisitorToDb(visitData);
+      sessionStorage.setItem(sessionKey, visitData.id);
+    }
+  }, []);
 
   // Cases state: strictly real documented investigations with 0 starting comments
   const [cases, setCases] = useState(() => {
