@@ -893,7 +893,7 @@ export default function StoryRecommendations({ userProfile, onOpenRegister, onNa
                         <button
                           onClick={() => handleTriggerEdit(item)}
                           className="text-[11px] font-mono text-slate-400 hover:text-amber-400 bg-slate-900/60 hover:bg-slate-800 border border-slate-800 hover:border-amber-500/40 px-2.5 py-1.5 rounded-lg flex items-center space-x-1.5 transition-colors"
-                          title="Solo el administrador con clave de 9 dígitos puede editar o eliminar"
+                          title="Acceso exclusivo del Administrador"
                         >
                           <Lock className="w-3 h-3 text-amber-500/80" />
                           <span>Modificar (Solo Admin)</span>
@@ -1021,7 +1021,7 @@ export default function StoryRecommendations({ userProfile, onOpenRegister, onNa
                 Autorización Exclusiva del Administrador
               </h3>
               <p className="text-xs text-slate-300 leading-relaxed max-w-sm mx-auto">
-                Ingresa tu clave maestra de 9 números para autorizar la edición o eliminación de historias recomendadas.
+                Ingresa tu clave de acceso autorizada para gestionar las historias de la comunidad.
               </p>
             </div>
 
@@ -1029,18 +1029,16 @@ export default function StoryRecommendations({ userProfile, onOpenRegister, onNa
             <form onSubmit={handleAdminVerify} className="space-y-4">
               <div className="space-y-1.5">
                 <label className="block text-xs font-mono font-bold text-slate-300">
-                  Clave Maestra de 9 Números:
+                  Clave de Acceso:
                 </label>
                 <div className="relative">
                   <input
                     type={showAdminPin ? "text" : "password"}
-                    inputMode="numeric"
-                    maxLength={9}
                     autoFocus
                     disabled={lockoutRemaining > 0 || isVerifyingAdmin}
                     value={adminPin}
-                    onChange={(e) => setAdminPin(e.target.value.replace(/\D/g, ''))}
-                    placeholder="••••••••• (9 números)"
+                    onChange={(e) => setAdminPin(e.target.value)}
+                    placeholder={lockoutRemaining > 0 ? "Acceso Bloqueado" : "••••••••••••"}
                     className="w-full bg-[#070a12] border-2 border-slate-700 focus:border-amber-500 text-white font-mono text-center text-xl tracking-widest py-3 px-10 rounded-xl focus:outline-none transition-all disabled:opacity-50"
                   />
                   <button
@@ -1068,7 +1066,7 @@ export default function StoryRecommendations({ userProfile, onOpenRegister, onNa
               {/* Submit Button */}
               <button
                 type="submit"
-                disabled={adminPin.length !== 9 || lockoutRemaining > 0 || isVerifyingAdmin}
+                disabled={!adminPin.trim() || lockoutRemaining > 0 || isVerifyingAdmin}
                 className="w-full bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 disabled:opacity-50 text-slate-950 font-bold font-mono py-3 px-4 rounded-xl text-sm flex items-center justify-center space-x-2 shadow-lg shadow-amber-950 transition-all cursor-pointer disabled:cursor-not-allowed"
               >
                 {isVerifyingAdmin ? (

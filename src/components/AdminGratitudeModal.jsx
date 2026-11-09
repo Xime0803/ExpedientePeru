@@ -359,7 +359,7 @@ export default function AdminGratitudeModal({
                     disabled={lockoutSeconds > 0 || isLoading}
                     value={pinInput}
                     onChange={(e) => {
-                      setPinInput(e.target.value.replace(/\D/g, '')); // Solo dígitos numéricos
+                      setPinInput(e.target.value);
                       setErrorMessage("");
                     }}
                     placeholder={lockoutSeconds > 0 ? `Bloqueado (${lockoutSeconds}s)` : "••••••••••••"}
