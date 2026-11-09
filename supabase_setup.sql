@@ -60,6 +60,9 @@ CREATE TABLE IF NOT EXISTS public.story_recommendations (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Asegurar que la columna comments exista si la tabla ya había sido creada previamente sin ella
+ALTER TABLE public.story_recommendations ADD COLUMN IF NOT EXISTS comments JSONB DEFAULT '[]'::jsonb;
+
 -- 5. Tabla de Buzón Confidencial (Denuncias e historias ciudadanas)
 CREATE TABLE IF NOT EXISTS public.whistleblower_stories (
     id TEXT PRIMARY KEY,

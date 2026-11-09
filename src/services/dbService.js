@@ -339,21 +339,49 @@ export async function fetchRecommendationsFromDb() {
 export async function addRecommendationToDb(rec) {
   if (isSupabaseConfigured && supabase) {
     try {
-      await supabase.from('story_recommendations').insert({
+      const payload = {
         id: rec.id,
         title: rec.title,
         place: rec.place,
-        platform: rec.platform,
+        platform: rec.platform || 'ambas',
         author: rec.author,
-        country: rec.country,
-        flag: rec.flag,
+        country: rec.country || 'Perú',
+        flag: rec.flag || '🇵🇪',
         story_details: rec.storyDetails,
-        votes: rec.votes || 1,
+        votes: rec.votes || 1
+      };
+
+      // 1. Intentar insertar con columna 'comments'
+      let res = await supabase.from('story_recommendations').insert({
+        ...payload,
         comments: rec.comments || []
       });
+
+      // 2. Si la tabla no tiene la columna 'comments', reintentar sin ella para que NUNCA falle
+      if (res.error) {
+        console.warn("[dbService] Reintentando inserción sin 'comments':", res.error.message);
+        res = await supabase.from('story_recommendations').insert(payload);
+      }
+
+      if (res.error) {
+        console.error("[dbService] Error guardando recomendación en Supabase:", res.error);
+        return { success: false, error: res.error };
+      } else {
+        console.log("[dbService] Recomendación guardada exitosamente en la nube:", rec.id);
+        return { success: true };
+      }
     } catch (e) {
-      console.error("[dbService] Error guardando recomendación:", e);
+      console.error("[dbService] Excepción al guardar recomendación:", e);
+      return { success: false, error: e };
     }
+  }
+  return { success: false, error: "Supabase no conectado" };
+}
+
+export async function syncAllRecommendationsToCloud(list) {
+  if (!isSupabaseConfigured || !supabase || !Array.isArray(list)) return;
+  for (const item of list) {
+    await addRecommendationToDb(item);
   }
 }
 

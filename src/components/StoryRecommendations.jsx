@@ -12,6 +12,7 @@ import {
   addCommentToRecommendationInDb,
   deleteRecommendationFromDb,
   updateRecommendationInDb,
+  syncAllRecommendationsToCloud,
   subscribeRecommendations 
 } from '../services/dbService';
 import { 
@@ -96,14 +97,54 @@ export default function StoryRecommendations({ userProfile, onOpenRegister, onNa
   // Sincronizar recomendaciones con Supabase en tiempo real
   useEffect(() => {
     fetchRecommendationsFromDb().then(data => {
-      if (data) {
-        setRecommendations(data);
+      if (data && data.length > 0) {
+        // Preservar comentarios locales si no vienen de la nube
+        const saved = localStorage.getItem('expediente_recommendations_v3');
+        const localList = saved ? JSON.parse(saved) : [];
+        const localMap = {};
+        for (const item of localList) {
+          if (item.comments && item.comments.length > 0) {
+            localMap[item.id] = item.comments;
+          }
+        }
+
+        const merged = data.map(r => ({
+          ...r,
+          comments: (r.comments && r.comments.length > 0) ? r.comments : (localMap[r.id] || [])
+        }));
+
+        setRecommendations(merged);
+        localStorage.setItem('expediente_recommendations_v3', JSON.stringify(merged));
+      } else {
+        // Si Supabase devuelve 0 filas pero tenemos recomendaciones guardadas localmente, subirlas a Supabase
+        const saved = localStorage.getItem('expediente_recommendations_v3');
+        if (saved) {
+          try {
+            const localList = JSON.parse(saved);
+            if (Array.isArray(localList) && localList.length > 0) {
+              syncAllRecommendationsToCloud(localList);
+            }
+          } catch (e) {}
+        }
       }
     });
 
     const unsub = subscribeRecommendations((data) => {
-      if (data) {
-        setRecommendations(data);
+      if (data && data.length > 0) {
+        setRecommendations(prev => {
+          const localMap = {};
+          for (const item of prev) {
+            if (item.comments && item.comments.length > 0) {
+              localMap[item.id] = item.comments;
+            }
+          }
+          const merged = data.map(r => ({
+            ...r,
+            comments: (r.comments && r.comments.length > 0) ? r.comments : (localMap[r.id] || [])
+          }));
+          localStorage.setItem('expediente_recommendations_v3', JSON.stringify(merged));
+          return merged;
+        });
       }
     });
 
@@ -116,7 +157,7 @@ export default function StoryRecommendations({ userProfile, onOpenRegister, onNa
     localStorage.setItem('expediente_recommendations_v3', JSON.stringify(recommendations));
   }, [recommendations]);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!title.trim() || !storyDetails.trim()) return;
 
@@ -140,15 +181,18 @@ export default function StoryRecommendations({ userProfile, onOpenRegister, onNa
       comments: []
     };
 
-    setRecommendations([newRec, ...recommendations]);
+    const updated = [newRec, ...recommendations];
+    setRecommendations(updated);
+    localStorage.setItem('expediente_recommendations_v3', JSON.stringify(updated));
+
     setTitle('');
     setPlace('');
     setStoryDetails('');
     setSubmitted(true);
     setTimeout(() => setSubmitted(false), 3500);
 
-    // Guardar en la base de datos de Supabase
-    addRecommendationToDb(newRec);
+    // Guardar en la base de datos de Supabase de forma segura e inmediata
+    await addRecommendationToDb(newRec);
   };
 
   const handleVote = (id) => {
