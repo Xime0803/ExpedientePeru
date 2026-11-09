@@ -15,6 +15,15 @@ import AdminGratitudeModal from './components/AdminGratitudeModal';
 import OnlineUsersBox from './components/OnlineUsersBox';
 import { initialCases, initialNews } from './data/casesData';
 import { 
+  fetchSupporters, 
+  syncAllSupportersToCloud, 
+  subscribeSupporters, 
+  fetchAllCaseComments, 
+  addCaseCommentToDb, 
+  voteCaseCommentInDb, 
+  subscribeCaseComments 
+} from './services/dbService';
+import { 
   Search, Filter, ShieldAlert, Sparkles, MapPin, Flame, MessageSquare, 
   HelpCircle, ExternalLink, Radio, CheckCircle2, Heart, Video, Smartphone,
   UserCheck 
@@ -153,9 +162,60 @@ export default function App() {
     ];
   });
 
+  // Sincronización en la Nube con Supabase (Colaboradores y Comentarios de Expedientes)
+  useEffect(() => {
+    // 1. Cargar colaboradores desde Supabase en la nube
+    fetchSupporters().then(cloudSupporters => {
+      if (cloudSupporters && cloudSupporters.length > 0) {
+        setSupporters(cloudSupporters);
+      }
+    });
+
+    // Suscribirse a cambios en vivo de colaboradores (reflejo instantáneo en todos los dispositivos)
+    const unsubSupporters = subscribeSupporters((updatedList) => {
+      if (updatedList && updatedList.length > 0) {
+        setSupporters(updatedList);
+      }
+    });
+
+    // 2. Cargar comentarios de expedientes desde Supabase
+    fetchAllCaseComments().then(comments => {
+      if (comments && comments.length > 0) {
+        setCases(prevCases => {
+          return prevCases.map(c => {
+            const caseComments = comments.filter(comm => comm.caseId === c.id);
+            if (caseComments.length > 0) {
+              return { ...c, comments: caseComments };
+            }
+            return c;
+          });
+        });
+      }
+    });
+
+    // Suscribirse a nuevos comentarios en tiempo real
+    const unsubComments = subscribeCaseComments((comments) => {
+      if (comments && comments.length > 0) {
+        setCases(prevCases => {
+          return prevCases.map(c => {
+            const caseComments = comments.filter(comm => comm.caseId === c.id);
+            return { ...c, comments: caseComments };
+          });
+        });
+      }
+    });
+
+    return () => {
+      if (typeof unsubSupporters === 'function') unsubSupporters();
+      if (typeof unsubComments === 'function') unsubComments();
+    };
+  }, []);
+
   const handleUpdateSupporters = (newList) => {
     setSupporters(newList);
     localStorage.setItem('expediente_admin_supporters_v1', JSON.stringify(newList));
+    // Sincronizar inmediatamente a la nube de Supabase para que todos los dispositivos lo vean
+    syncAllSupportersToCloud(newList);
   };
 
   // Modal active case
@@ -168,12 +228,13 @@ export default function App() {
 
   // Handle adding comments/theories to a case
   const handleAddCaseComment = (caseId, newComment) => {
+    const fullComment = { id: "c-" + Date.now(), ...newComment };
     const updated = cases.map(c => {
       if (c.id === caseId) {
         return {
           ...c,
           comments: [
-            { id: "c-" + Date.now(), ...newComment },
+            fullComment,
             ...(c.comments || [])
           ]
         };
@@ -186,20 +247,28 @@ export default function App() {
     if (selectedCase && selectedCase.id === caseId) {
       setSelectedCase(updated.find(c => c.id === caseId));
     }
+
+    // Guardar en la base de datos de Supabase en la nube
+    addCaseCommentToDb(caseId, fullComment);
   };
 
   // Handle voting on case comment
   const handleVoteCaseComment = (caseId, commentId, direction) => {
+    let targetUp = 0;
+    let targetDown = 0;
+
     const updated = cases.map(c => {
       if (c.id === caseId) {
         return {
           ...c,
           comments: (c.comments || []).map(comm => {
             if (comm.id === commentId) {
+              targetUp = direction === 'up' ? (comm.upvotes || 0) + 1 : (comm.upvotes || 0);
+              targetDown = direction === 'down' ? (comm.downvotes || 0) + 1 : (comm.downvotes || 0);
               return {
                 ...comm,
-                upvotes: direction === 'up' ? comm.upvotes + 1 : comm.upvotes,
-                downvotes: direction === 'down' ? comm.downvotes + 1 : comm.downvotes,
+                upvotes: targetUp,
+                downvotes: targetDown,
               };
             }
             return comm;
@@ -213,6 +282,9 @@ export default function App() {
     if (selectedCase && selectedCase.id === caseId) {
       setSelectedCase(updated.find(c => c.id === caseId));
     }
+
+    // Persistir voto en Supabase en la nube
+    voteCaseCommentInDb(commentId, targetUp, targetDown);
   };
 
   // Handle adding comment to news item

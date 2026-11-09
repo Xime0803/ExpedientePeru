@@ -1,5 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Send, Shield, Lock, CheckCircle2, ThumbsUp, AlertTriangle, FileText, MapPin, Globe } from 'lucide-react';
+import { 
+  fetchWhistleblowerStoriesFromDb, 
+  submitWhistleblowerStoryToDb, 
+  voteWhistleblowerStoryInDb 
+} from '../services/dbService';
 
 export default function WhistleblowerBox({ userProfile, onOpenRegister }) {
   const [activeTab, setActiveTab] = useState('enviar'); // 'enviar' | 'enviadas'
@@ -14,6 +19,15 @@ export default function WhistleblowerBox({ userProfile, onOpenRegister }) {
   const [storyText, setStoryText] = useState('');
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+
+  // Sincronizar historias del buzón con Supabase
+  useEffect(() => {
+    fetchWhistleblowerStoriesFromDb().then(data => {
+      if (data && data.length > 0) {
+        setStories(data);
+      }
+    });
+  }, []);
 
   useEffect(() => {
     localStorage.setItem('expediente_community_stories_v3', JSON.stringify(stories));
@@ -47,6 +61,9 @@ export default function WhistleblowerBox({ userProfile, onOpenRegister }) {
     setTitle('');
     setStoryText('');
 
+    // Guardar en la base de datos de Supabase
+    submitWhistleblowerStoryToDb(newStory);
+
     setTimeout(() => {
       setIsSubmitted(false);
       setActiveTab('enviadas');
@@ -54,12 +71,17 @@ export default function WhistleblowerBox({ userProfile, onOpenRegister }) {
   };
 
   const handleVoteStory = (id) => {
+    let updatedVotes = 1;
     setStories(prev => prev.map(s => {
       if (s.id === id) {
-        return { ...s, votes: s.votes + 1 };
+        updatedVotes = (s.votes || 0) + 1;
+        return { ...s, votes: updatedVotes };
       }
       return s;
     }));
+
+    // Persistir voto en Supabase
+    voteWhistleblowerStoryInDb(id, updatedVotes);
   };
 
   const departments = [

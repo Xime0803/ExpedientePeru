@@ -4,6 +4,13 @@ import {
   MapPin, CheckCircle2, Filter, AlertCircle, ExternalLink, Globe, 
   UserCheck, Trophy, Flame, Clock, ArrowRight, ShieldAlert 
 } from 'lucide-react';
+import { 
+  fetchRecommendationsFromDb, 
+  addRecommendationToDb, 
+  voteRecommendationInDb, 
+  addCommentToRecommendationInDb, 
+  subscribeRecommendations 
+} from '../services/dbService';
 
 export default function StoryRecommendations({ userProfile, onOpenRegister, onNavigateTab }) {
   const [recommendations, setRecommendations] = useState(() => {
@@ -20,6 +27,25 @@ export default function StoryRecommendations({ userProfile, onOpenRegister, onNa
   const [submitted, setSubmitted] = useState(false);
   const [activeCommentId, setActiveCommentId] = useState(null);
   const [commentText, setCommentText] = useState('');
+
+  // Sincronizar recomendaciones con Supabase en tiempo real
+  useEffect(() => {
+    fetchRecommendationsFromDb().then(data => {
+      if (data && data.length > 0) {
+        setRecommendations(data);
+      }
+    });
+
+    const unsub = subscribeRecommendations((data) => {
+      if (data && data.length > 0) {
+        setRecommendations(data);
+      }
+    });
+
+    return () => {
+      if (typeof unsub === 'function') unsub();
+    };
+  }, []);
 
   useEffect(() => {
     localStorage.setItem('expediente_recommendations_v3', JSON.stringify(recommendations));
@@ -55,15 +81,23 @@ export default function StoryRecommendations({ userProfile, onOpenRegister, onNa
     setStoryDetails('');
     setSubmitted(true);
     setTimeout(() => setSubmitted(false), 3500);
+
+    // Guardar en la base de datos de Supabase
+    addRecommendationToDb(newRec);
   };
 
   const handleVote = (id) => {
+    let updatedVotes = 1;
     setRecommendations(prev => prev.map(item => {
       if (item.id === id) {
-        return { ...item, votes: item.votes + 1 };
+        updatedVotes = (item.votes || 0) + 1;
+        return { ...item, votes: updatedVotes };
       }
       return item;
     }));
+
+    // Persistir voto en Supabase
+    voteRecommendationInDb(id, updatedVotes);
   };
 
   const handleAddComment = (recId, e) => {
@@ -75,25 +109,30 @@ export default function StoryRecommendations({ userProfile, onOpenRegister, onNa
       return;
     }
 
+    let finalComments = [];
     setRecommendations(prev => prev.map(item => {
       if (item.id === recId) {
+        finalComments = [
+          ...(item.comments || []),
+          {
+            id: "c-" + Date.now(),
+            user: userProfile.nickname,
+            country: userProfile.country || "Perú",
+            flag: userProfile.flag || "🇵🇪",
+            text: commentText.trim(),
+            time: "Hace un momento"
+          }
+        ];
         return {
           ...item,
-          comments: [
-            ...(item.comments || []),
-            {
-              id: "c-" + Date.now(),
-              user: userProfile.nickname,
-              country: userProfile.country || "Perú",
-              flag: userProfile.flag || "🇵🇪",
-              text: commentText.trim(),
-              time: "Hace un momento"
-            }
-          ]
+          comments: finalComments
         };
       }
       return item;
     }));
+
+    // Guardar comentarios en Supabase
+    addCommentToRecommendationInDb(recId, finalComments);
 
     setCommentText('');
   };

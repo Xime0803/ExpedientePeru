@@ -16,13 +16,27 @@ import {
   ShieldAlert,
   Clock,
   Eye,
-  EyeOff
+  EyeOff,
+  Database,
+  RefreshCw,
+  Server
 } from 'lucide-react';
 import { 
   verifyAdminCredentials, 
   getAdminSecurityStatus, 
   sanitizeSecureText 
 } from '../security/securityVault';
+import { 
+  getSupabaseCredentials, 
+  setSupabaseConfig, 
+  testConnection, 
+  isSupabaseConfigured 
+} from '../services/supabaseClient';
+import { 
+  saveSupporter, 
+  deleteSupporterFromDb, 
+  syncAllSupportersToCloud 
+} from '../services/dbService';
 
 export default function AdminGratitudeModal({ 
   isOpen, 
@@ -45,6 +59,13 @@ export default function AdminGratitudeModal({
   const [method, setMethod] = useState("Yape");
   const [message, setMessage] = useState("");
   const [amountOrTier, setAmountOrTier] = useState("Colaborador Destacado");
+
+  // Supabase Configuration State
+  const initialCreds = getSupabaseCredentials();
+  const [dbUrlInput, setDbUrlInput] = useState(initialCreds.url);
+  const [dbKeyInput, setDbKeyInput] = useState(initialCreds.anonKey);
+  const [dbStatus, setDbStatus] = useState({ testing: false, message: '', success: null });
+  const [showDbSettings, setShowDbSettings] = useState(false);
 
   // Inactivity Auto-logout Timer (15 minutes)
   const autoLogoutTimerRef = useRef(null);
@@ -133,7 +154,7 @@ export default function AdminGratitudeModal({
       // Edit existing
       const updated = supporters.map(s => {
         if (s.id === editingId) {
-          return {
+          const updatedObj = {
             ...s,
             name: cleanName,
             location: cleanLocation,
@@ -142,6 +163,8 @@ export default function AdminGratitudeModal({
             message: cleanMessage,
             amountOrTier: cleanTier
           };
+          saveSupporter(updatedObj);
+          return updatedObj;
         }
         return s;
       });
@@ -160,6 +183,7 @@ export default function AdminGratitudeModal({
         date: new Date().toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' })
       };
       onUpdateSupporters([newSupporter, ...supporters]);
+      saveSupporter(newSupporter);
     }
 
     // Reset Form
@@ -192,6 +216,29 @@ export default function AdminGratitudeModal({
     if (window.confirm("¿Estás seguro de quitar a esta persona del muro de agradecimientos?")) {
       const updated = supporters.filter(s => s.id !== id);
       onUpdateSupporters(updated);
+      deleteSupporterFromDb(id);
+    }
+  };
+
+  const handleSaveAndTestDb = async () => {
+    setDbStatus({ testing: true, message: 'Verificando credenciales con Supabase...', success: null });
+    setSupabaseConfig(dbUrlInput, dbKeyInput);
+    const res = await testConnection();
+    if (res.success) {
+      await syncAllSupportersToCloud(supporters);
+      setDbStatus({ testing: false, message: '✅ ¡Conectado con éxito! Colaboradores sincronizados en la nube.', success: true });
+    } else {
+      setDbStatus({ testing: false, message: '❌ ' + (res.message || 'Error de conexión'), success: false });
+    }
+  };
+
+  const handleSyncNow = async () => {
+    setDbStatus({ testing: true, message: 'Subiendo colaboradores a la nube de Supabase...', success: null });
+    const success = await syncAllSupportersToCloud(supporters);
+    if (success) {
+      setDbStatus({ testing: false, message: '✅ Todos los colaboradores se han sincronizado en la nube.', success: true });
+    } else {
+      setDbStatus({ testing: false, message: '⚠️ No se pudo sincronizar. Verifica tu clave Anon Key.', success: false });
     }
   };
 
@@ -374,6 +421,104 @@ export default function AdminGratitudeModal({
           /* STEP 2: MANAGEMENT INTERFACE */
           <div className="py-4 space-y-6">
             
+            {/* Database & Cloud Sync Status Banner */}
+            <div className="bg-[#0b101c] border-2 border-slate-700/80 rounded-2xl p-4 space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div className="flex items-center space-x-2.5">
+                  <div className={`w-3 h-3 rounded-full ${isSupabaseConfigured ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400 animate-ping'}`}></div>
+                  <div>
+                    <h4 className="text-xs sm:text-sm font-bold text-white flex items-center space-x-1.5">
+                      <Database className="w-4 h-4 text-emerald-400" />
+                      <span>Sincronización en la Nube (Multi-Dispositivo)</span>
+                    </h4>
+                    <p className="text-[11px] font-mono text-slate-400">
+                      {isSupabaseConfigured 
+                        ? '🟢 Conectado a Supabase: los cambios se guardan y reflejan en todos los celulares y PCs.' 
+                        : '⚠️ Modo local: pega tu clave Anon Key abajo para que tus cambios se guarden en la base de datos de otros dispositivos.'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setShowDbSettings(!showDbSettings)}
+                    className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700 text-xs font-mono font-bold flex items-center space-x-1"
+                  >
+                    <Server className="w-3.5 h-3.5" />
+                    <span>{showDbSettings ? 'Ocultar Claves' : 'Configurar Claves'}</span>
+                  </button>
+
+                  {isSupabaseConfigured && (
+                    <button
+                      type="button"
+                      onClick={handleSyncNow}
+                      className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-slate-950 text-xs font-extrabold flex items-center space-x-1 shadow-md"
+                      title="Sincronizar colaboradores a la nube"
+                    >
+                      <RefreshCw className={`w-3.5 h-3.5 ${dbStatus.testing ? 'animate-spin' : ''}`} />
+                      <span>Sincronizar Nube</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Status Message */}
+              {dbStatus.message && (
+                <div className={`p-2.5 rounded-xl text-xs font-mono font-bold border ${
+                  dbStatus.success 
+                    ? 'bg-emerald-950/70 border-emerald-700 text-emerald-200' 
+                    : 'bg-amber-950/70 border-amber-700 text-amber-200'
+                }`}>
+                  {dbStatus.message}
+                </div>
+              )}
+
+              {/* Collapsible Supabase Credential Input */}
+              {showDbSettings && (
+                <div className="pt-3 border-t border-slate-800 space-y-3 animate-in fade-in">
+                  <div>
+                    <label className="block text-xs font-mono text-slate-300 mb-1">
+                      Supabase Project URL:
+                    </label>
+                    <input 
+                      type="text" 
+                      value={dbUrlInput} 
+                      onChange={(e) => setDbUrlInput(e.target.value)}
+                      placeholder="https://ocswfeouocwzaimhzrjs.supabase.co"
+                      className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-mono text-slate-300 mb-1">
+                      Supabase Anon / Public Key (eyJ...):
+                    </label>
+                    <input 
+                      type="password" 
+                      value={dbKeyInput} 
+                      onChange={(e) => setDbKeyInput(e.target.value)}
+                      placeholder="Pega aquí la clave larga que empieza con eyJ..."
+                      className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-white"
+                    />
+                    <p className="text-[10px] text-slate-400 mt-1 font-mono">
+                      💡 La encuentras en Supabase ➡️ Project Settings (⚙️) ➡️ API ➡️ anon / public key.
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleSaveAndTestDb}
+                    disabled={dbStatus.testing}
+                    className="w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-xs flex items-center justify-center space-x-2 shadow-lg"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${dbStatus.testing ? 'animate-spin' : ''}`} />
+                    <span>Guardar y Probar Conexión con Supabase</span>
+                  </button>
+                </div>
+              )}
+            </div>
+
             {/* Form to Add or Edit */}
             <form onSubmit={handleSaveSupporter} className="bg-slate-900/90 border-2 border-slate-700 rounded-2xl p-4 sm:p-5 space-y-4">
               <div className="flex items-center justify-between pb-2 border-b border-slate-800">

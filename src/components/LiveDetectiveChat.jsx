@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   Send, Users, Radio, Shield, Smile, Hash, AlertCircle, Bot, Sparkles, Volume2, VolumeX, Globe 
 } from 'lucide-react';
+import { fetchChatMessages, sendChatMessageToDb, subscribeChatMessages } from '../services/dbService';
 
 const initialMessages = [
   {
@@ -28,6 +29,29 @@ export default function LiveDetectiveChat({ userProfile, onOpenRegister }) {
   const [inputText, setInputText] = useState('');
   const [soundEnabled, setSoundEnabled] = useState(true);
   const messagesEndRef = useRef(null);
+
+  // Cargar mensajes en la nube desde Supabase y sincronizar en vivo
+  useEffect(() => {
+    fetchChatMessages(currentChannel).then(cloudMsgs => {
+      if (cloudMsgs && cloudMsgs.length > 0) {
+        setMessages(prev => {
+          const otherChannels = prev.filter(m => m.channel !== currentChannel);
+          return [...otherChannels, ...cloudMsgs];
+        });
+      }
+    });
+
+    const unsub = subscribeChatMessages((newMsg) => {
+      setMessages(prev => {
+        if (prev.some(m => m.id === newMsg.id)) return prev;
+        return [...prev, newMsg];
+      });
+    });
+
+    return () => {
+      if (typeof unsub === 'function') unsub();
+    };
+  }, [currentChannel]);
 
   useEffect(() => {
     localStorage.setItem('expediente_chat_msgs_v3', JSON.stringify(messages));
@@ -60,6 +84,9 @@ export default function LiveDetectiveChat({ userProfile, onOpenRegister }) {
 
     setMessages(prev => [...prev, userMsg]);
     setInputText('');
+
+    // Guardar en Supabase para que llegue a todos los dispositivos conectados
+    sendChatMessageToDb(userMsg);
   };
 
   const handleSendQuickTag = (tag) => {
