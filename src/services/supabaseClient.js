@@ -1,17 +1,21 @@
 import { createClient } from '@supabase/supabase-js';
 
-// URL oficial del proyecto en Supabase (con fallback automático a la URL detectada del usuario)
+// URL y Clave oficial del proyecto en Supabase
 const DEFAULT_SUPABASE_URL = 'https://ocswfeouocwzaimhzrjs.supabase.co';
+const DEFAULT_SUPABASE_KEY = 'sb_publishable_QGHxTJEbMIFlukcp4nFKHQ_UHR9p8uv';
 
 export function getSupabaseCredentials() {
-  const envUrl = import.meta.env.VITE_SUPABASE_URL;
-  const envKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+  const envUrl = import.meta.env.VITE_SUPABASE_URL || import.meta.env.NEXT_PUBLIC_SUPABASE_URL;
+  const envKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 
+                 import.meta.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || 
+                 import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
+                 import.meta.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   const storageUrl = typeof window !== 'undefined' ? localStorage.getItem('expediente_supabase_url') : null;
   const storageKey = typeof window !== 'undefined' ? localStorage.getItem('expediente_supabase_anon_key') : null;
 
   const url = (envUrl && envUrl.trim() !== '') ? envUrl.trim() : (storageUrl && storageUrl.trim() !== '') ? storageUrl.trim() : DEFAULT_SUPABASE_URL;
-  const anonKey = (envKey && envKey.trim() !== '') ? envKey.trim() : (storageKey && storageKey.trim() !== '') ? storageKey.trim() : '';
+  const anonKey = (envKey && envKey.trim() !== '') ? envKey.trim() : (storageKey && storageKey.trim() !== '') ? storageKey.trim() : DEFAULT_SUPABASE_KEY;
 
   return { url, anonKey };
 }
@@ -20,12 +24,12 @@ let { url: activeUrl, anonKey: activeKey } = getSupabaseCredentials();
 
 export function isConfigured() {
   const { anonKey } = getSupabaseCredentials();
-  return Boolean(anonKey && anonKey.length > 20);
+  return Boolean(anonKey && anonKey.length > 15);
 }
 
 function initClient() {
   const { url, anonKey } = getSupabaseCredentials();
-  if (url && anonKey && anonKey.length > 20) {
+  if (url && anonKey && anonKey.length > 15) {
     try {
       return createClient(url, anonKey, {
         auth: {
@@ -71,7 +75,6 @@ export async function testConnection() {
   try {
     const { data, error } = await supabase.from('community_supporters').select('count', { count: 'exact', head: true });
     if (error) {
-      // Si la tabla no existe aún, devuelve advertencia sobre el script SQL
       if (error.code === '42P01') {
         return { 
           success: false, 
