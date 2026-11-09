@@ -314,7 +314,7 @@ export async function fetchRecommendationsFromDb() {
         .select('*')
         .order('votes', { ascending: false });
 
-      if (!error && data && data.length > 0) {
+      if (!error && data) {
         return data.map(r => ({
           id: r.id,
           title: r.title,
@@ -379,6 +379,39 @@ export async function addCommentToRecommendationInDb(id, updatedComments) {
         .eq('id', id);
     } catch (e) {
       console.error("[dbService] Error comentando recomendación:", e);
+    }
+  }
+}
+
+export async function deleteRecommendationFromDb(id) {
+  if (isSupabaseConfigured && supabase) {
+    try {
+      await supabase
+        .from('story_recommendations')
+        .delete()
+        .eq('id', id);
+    } catch (e) {
+      console.error("[dbService] Error eliminando recomendación de Supabase:", e);
+    }
+  }
+}
+
+export async function updateRecommendationInDb(id, updatedFields) {
+  if (isSupabaseConfigured && supabase) {
+    try {
+      const payload = {};
+      if (updatedFields.title !== undefined) payload.title = updatedFields.title;
+      if (updatedFields.place !== undefined) payload.place = updatedFields.place;
+      if (updatedFields.platform !== undefined) payload.platform = updatedFields.platform;
+      if (updatedFields.storyDetails !== undefined) payload.story_details = updatedFields.storyDetails;
+      if (updatedFields.votes !== undefined) payload.votes = updatedFields.votes;
+
+      await supabase
+        .from('story_recommendations')
+        .update(payload)
+        .eq('id', id);
+    } catch (e) {
+      console.error("[dbService] Error actualizando recomendación en Supabase:", e);
     }
   }
 }

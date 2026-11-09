@@ -2,15 +2,23 @@ import React, { useState, useEffect } from 'react';
 import { 
   Sparkles, Send, ThumbsUp, MessageSquare, Video, Smartphone, 
   MapPin, CheckCircle2, Filter, AlertCircle, ExternalLink, Globe, 
-  UserCheck, Trophy, Flame, Clock, ArrowRight, ShieldAlert 
+  UserCheck, Trophy, Flame, Clock, ArrowRight, ShieldAlert,
+  Lock, Unlock, ShieldCheck, Edit3, Trash2, Check, X, Eye, EyeOff, AlertTriangle
 } from 'lucide-react';
 import { 
   fetchRecommendationsFromDb, 
   addRecommendationToDb, 
   voteRecommendationInDb, 
-  addCommentToRecommendationInDb, 
+  addCommentToRecommendationInDb,
+  deleteRecommendationFromDb,
+  updateRecommendationInDb,
   subscribeRecommendations 
 } from '../services/dbService';
+import { 
+  verifyAdminCredentials, 
+  getAdminSecurityStatus, 
+  sanitizeSecureText 
+} from '../security/securityVault';
 
 export default function StoryRecommendations({ userProfile, onOpenRegister, onNavigateTab }) {
   const [recommendations, setRecommendations] = useState(() => {
@@ -28,16 +36,73 @@ export default function StoryRecommendations({ userProfile, onOpenRegister, onNa
   const [activeCommentId, setActiveCommentId] = useState(null);
   const [commentText, setCommentText] = useState('');
 
+  // ESTADO DE SEGURIDAD ADMINISTRATIVA (Clave Maestra 924571958)
+  const [isAdmin, setIsAdmin] = useState(() => {
+    return typeof window !== 'undefined' && sessionStorage.getItem('exp_admin_active_session') === 'true';
+  });
+  const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
+  const [adminPin, setAdminPin] = useState("");
+  const [showAdminPin, setShowAdminPin] = useState(false);
+  const [isVerifyingAdmin, setIsVerifyingAdmin] = useState(false);
+  const [adminError, setAdminError] = useState("");
+  const [lockoutRemaining, setLockoutRemaining] = useState(0);
+  const [pendingAction, setPendingAction] = useState(null); // { type: 'edit' | 'delete', rec }
+
+  // ESTADOS DE EDICIÓN Y ELIMINACIÓN
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingRec, setEditingRec] = useState(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editPlace, setEditPlace] = useState("");
+  const [editPlatform, setEditPlatform] = useState("ambas");
+  const [editStoryDetails, setEditStoryDetails] = useState("");
+  const [editVotes, setEditVotes] = useState(1);
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
+
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [deletingRec, setDeletingRec] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const [toastMessage, setToastMessage] = useState("");
+
+  const showToast = (msg) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(""), 4000);
+  };
+
+  // Temporizador anti-fuerza bruta
+  useEffect(() => {
+    if (isAdminModalOpen) {
+      const status = getAdminSecurityStatus();
+      if (status.isLocked) {
+        setLockoutRemaining(status.remainingSeconds);
+      }
+    }
+  }, [isAdminModalOpen]);
+
+  useEffect(() => {
+    if (lockoutRemaining <= 0) return;
+    const interval = setInterval(() => {
+      setLockoutRemaining(prev => {
+        if (prev <= 1) {
+          setAdminError("");
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [lockoutRemaining]);
+
   // Sincronizar recomendaciones con Supabase en tiempo real
   useEffect(() => {
     fetchRecommendationsFromDb().then(data => {
-      if (data && data.length > 0) {
+      if (data) {
         setRecommendations(data);
       }
     });
 
     const unsub = subscribeRecommendations((data) => {
-      if (data && data.length > 0) {
+      if (data) {
         setRecommendations(data);
       }
     });
@@ -137,6 +202,140 @@ export default function StoryRecommendations({ userProfile, onOpenRegister, onNa
     setCommentText('');
   };
 
+  // CONTROL DE ACCESO ADMINISTRATIVO
+  const handleTriggerEdit = (rec) => {
+    if (!isAdmin) {
+      setPendingAction({ type: 'edit', rec });
+      setAdminError("");
+      setAdminPin("");
+      setIsAdminModalOpen(true);
+      return;
+    }
+    openEditModal(rec);
+  };
+
+  const openEditModal = (rec) => {
+    setEditingRec(rec);
+    setEditTitle(rec.title);
+    setEditPlace(rec.place);
+    setEditPlatform(rec.platform || "ambas");
+    setEditStoryDetails(rec.storyDetails);
+    setEditVotes(rec.votes || 1);
+    setIsEditModalOpen(true);
+  };
+
+  const handleTriggerDelete = (rec) => {
+    if (!isAdmin) {
+      setPendingAction({ type: 'delete', rec });
+      setAdminError("");
+      setAdminPin("");
+      setIsAdminModalOpen(true);
+      return;
+    }
+    setDeletingRec(rec);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleAdminVerify = async (e) => {
+    e.preventDefault();
+    if (!adminPin || isVerifyingAdmin) return;
+    setIsVerifyingAdmin(true);
+    setAdminError("");
+
+    try {
+      const result = await verifyAdminCredentials(adminPin);
+      if (result.success) {
+        setIsAdmin(true);
+        sessionStorage.setItem('exp_admin_active_session', 'true');
+        setIsAdminModalOpen(false);
+        setAdminPin("");
+        showToast("Acceso de Administrador Autorizado (Bóveda SHA-256)");
+
+        if (pendingAction) {
+          if (pendingAction.type === 'edit') {
+            openEditModal(pendingAction.rec);
+          } else if (pendingAction.type === 'delete') {
+            setDeletingRec(pendingAction.rec);
+            setIsDeleteModalOpen(true);
+          }
+          setPendingAction(null);
+        }
+      } else {
+        if (result.isLocked) {
+          setLockoutRemaining(result.remainingSeconds);
+        }
+        setAdminError(result.message || "Clave de administrador incorrecta.");
+      }
+    } catch (err) {
+      setAdminError("Error al verificar credenciales.");
+    } finally {
+      setIsVerifyingAdmin(false);
+    }
+  };
+
+  const handleAdminLogout = () => {
+    setIsAdmin(false);
+    sessionStorage.removeItem('exp_admin_active_session');
+    showToast("Sesión de Administrador cerrada");
+  };
+
+  const handleSaveEdit = async (e) => {
+    e.preventDefault();
+    if (!editingRec) return;
+    setIsSavingEdit(true);
+
+    const cleanTitle = sanitizeSecureText(editTitle);
+    const cleanPlace = sanitizeSecureText(editPlace);
+    const cleanDetails = sanitizeSecureText(editStoryDetails);
+    const numVotes = Math.max(0, parseInt(editVotes, 10) || 1);
+
+    const updatedList = recommendations.map(r => {
+      if (r.id === editingRec.id) {
+        return {
+          ...r,
+          title: cleanTitle,
+          place: cleanPlace,
+          platform: editPlatform,
+          storyDetails: cleanDetails,
+          votes: numVotes
+        };
+      }
+      return r;
+    });
+
+    setRecommendations(updatedList);
+    localStorage.setItem('expediente_recommendations_v3', JSON.stringify(updatedList));
+
+    await updateRecommendationInDb(editingRec.id, {
+      title: cleanTitle,
+      place: cleanPlace,
+      platform: editPlatform,
+      storyDetails: cleanDetails,
+      votes: numVotes
+    });
+
+    setIsSavingEdit(false);
+    setIsEditModalOpen(false);
+    setEditingRec(null);
+    showToast("Historia actualizada y sincronizada en la nube");
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deletingRec) return;
+    setIsDeleting(true);
+
+    const filteredList = recommendations.filter(r => r.id !== deletingRec.id);
+    setRecommendations(filteredList);
+    localStorage.setItem('expediente_recommendations_v3', JSON.stringify(filteredList));
+
+    await deleteRecommendationFromDb(deletingRec.id);
+
+    setIsDeleting(false);
+    setIsDeleteModalOpen(false);
+    setDeletingRec(null);
+    showToast("Historia eliminada definitivamente de la base de datos");
+  };
+
   // Filter recommendations
   const filtered = recommendations.filter(r => {
     if (platformFilter === 'todas') return true;
@@ -158,8 +357,45 @@ export default function StoryRecommendations({ userProfile, onOpenRegister, onNa
     .filter(item => item.votes > 0);
 
   return (
-    <div className="max-w-5xl mx-auto space-y-8">
+    <div className="max-w-5xl mx-auto space-y-8 relative">
       
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 z-50 bg-[#0f172a] border-2 border-amber-500 text-white px-5 py-3 rounded-xl shadow-2xl flex items-center space-x-3 animate-fade-in font-mono text-sm">
+          <ShieldCheck className="w-5 h-5 text-amber-400 shrink-0" />
+          <span>{toastMessage}</span>
+        </div>
+      )}
+
+      {/* BANNER DE ADMINISTRADOR ACTIVO */}
+      {isAdmin && (
+        <div className="bg-gradient-to-r from-amber-950/70 via-[#131b2e] to-amber-950/70 border-2 border-amber-500/80 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xl">
+          <div className="flex items-center space-x-3.5">
+            <div className="w-11 h-11 rounded-xl bg-amber-500/20 border border-amber-500/70 flex items-center justify-center text-amber-400 shrink-0">
+              <ShieldCheck className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="flex items-center space-x-2">
+                <span className="text-base font-extrabold text-white">SESIÓN DE ADMINISTRADOR ACTIVA</span>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-500 font-bold">
+                  Bóveda SHA-256 Verificada
+                </span>
+              </div>
+              <p className="text-xs sm:text-sm text-amber-200/90 mt-0.5">
+                Tienes permisos exclusivos para <strong>editar</strong> o <strong>eliminar</strong> permanentemente cualquier historia de la comunidad.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={handleAdminLogout}
+            className="bg-slate-900 hover:bg-slate-800 text-slate-200 hover:text-white border-2 border-slate-700 hover:border-amber-500 px-4 py-2.5 rounded-xl text-xs font-mono font-bold flex items-center space-x-2 transition-all self-end sm:self-auto shrink-0 shadow-md"
+          >
+            <Lock className="w-4 h-4 text-amber-400" />
+            <span>Cerrar Sesión Admin</span>
+          </button>
+        </div>
+      )}
+
       {/* Intro Header */}
       <div className="bg-[#121826] border-2 border-slate-700/80 rounded-2xl p-6 sm:p-8 shadow-xl">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
@@ -177,8 +413,23 @@ export default function StoryRecommendations({ userProfile, onOpenRegister, onNa
             </p>
           </div>
 
-          {/* Channel links */}
+          {/* Actions & Channels */}
           <div className="flex flex-col sm:flex-row gap-2.5 shrink-0 w-full md:w-auto">
+            {!isAdmin && (
+              <button
+                onClick={() => {
+                  setAdminError("");
+                  setAdminPin("");
+                  setIsAdminModalOpen(true);
+                }}
+                className="bg-slate-900/90 hover:bg-amber-950/60 text-slate-200 hover:text-amber-300 border-2 border-slate-700 hover:border-amber-500/80 font-mono font-bold px-4 py-2.5 rounded-xl text-xs sm:text-sm flex items-center justify-center space-x-2 transition-all shadow-md"
+                title="Acceso protegido con clave maestra para edición y eliminación"
+              >
+                <Lock className="w-4 h-4 text-amber-400" />
+                <span>Gestión Admin</span>
+              </button>
+            )}
+
             <a 
               href="https://www.youtube.com/@XimeFer8322" 
               target="_blank" 
@@ -201,7 +452,7 @@ export default function StoryRecommendations({ userProfile, onOpenRegister, onNa
         </div>
       </div>
 
-      {/* TOP VOTED RANKING PODIUM (If there are stories with votes) */}
+      {/* TOP VOTED RANKING PODIUM */}
       {topRanked.length > 0 && (
         <div className="bg-gradient-to-r from-[#171e2e] via-[#121927] to-[#171e2e] border-2 border-amber-500/50 rounded-2xl p-5 sm:p-7 shadow-2xl space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-amber-500/30 gap-2">
@@ -289,7 +540,6 @@ export default function StoryRecommendations({ userProfile, onOpenRegister, onNa
             Envía tu recomendación de historia
           </h3>
 
-          {/* User registration status indicator */}
           <button 
             type="button"
             onClick={onOpenRegister}
@@ -315,8 +565,6 @@ export default function StoryRecommendations({ userProfile, onOpenRegister, onNa
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              
-              {/* Title */}
               <div className="md:col-span-2">
                 <label className="block text-xs sm:text-sm font-bold text-white mb-1.5">
                   Nombre o Título de la Historia *
@@ -331,7 +579,6 @@ export default function StoryRecommendations({ userProfile, onOpenRegister, onNa
                 />
               </div>
 
-              {/* Place */}
               <div>
                 <label className="block text-xs sm:text-sm font-bold text-white mb-1.5">
                   Lugar o Ciudad en Perú *
@@ -347,7 +594,6 @@ export default function StoryRecommendations({ userProfile, onOpenRegister, onNa
               </div>
             </div>
 
-            {/* Target Platform Selection */}
             <div>
               <label className="block text-xs sm:text-sm font-bold text-white mb-2">
                 ¿En qué canal te gustaría ver esta historia? *
@@ -394,7 +640,6 @@ export default function StoryRecommendations({ userProfile, onOpenRegister, onNa
               </div>
             </div>
 
-            {/* Story Details */}
             <div>
               <label className="block text-xs sm:text-sm font-bold text-white mb-1.5">
                 Cuéntanos de qué trata y por qué debería ser grabada *
@@ -409,7 +654,6 @@ export default function StoryRecommendations({ userProfile, onOpenRegister, onNa
               />
             </div>
 
-            {/* Submit */}
             <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
               <span className="text-xs text-slate-300">
                 Se registrará como: <strong className="text-amber-400">{userProfile?.flag} {userProfile?.nickname || 'Sin Registrar'}</strong> ({userProfile?.country || 'Perú'})
@@ -426,19 +670,19 @@ export default function StoryRecommendations({ userProfile, onOpenRegister, onNa
         )}
       </div>
 
-      {/* List of Community Recommendations with TOP Filter & Comments */}
+      {/* List of Community Recommendations */}
       <div className="space-y-4">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-2 border-b border-slate-800">
           <div>
-            <h3 className="text-xl font-bold text-white">
-              Historias Recomendadas por los Seguidores ({sorted.length})
+            <h3 className="text-xl font-bold text-white flex items-center space-x-2">
+              <span>Historias Recomendadas por los Seguidores ({sorted.length})</span>
             </h3>
             <p className="text-xs sm:text-sm text-slate-400">
-              Vota por las historias enviadas por los seguidores para que sean grabadas primero.
+              Vota por las historias enviadas por los seguidores. Solo el administrador con código de seguridad puede modificarlas o eliminarlas.
             </p>
           </div>
 
-          {/* Sort Controls (Top Más Votadas vs Más Recientes) */}
+          {/* Sort Controls */}
           <div className="flex flex-wrap items-center gap-2 text-xs font-mono">
             <span className="text-slate-400 font-bold hidden sm:inline">Ordenar:</span>
             <button
@@ -466,7 +710,7 @@ export default function StoryRecommendations({ userProfile, onOpenRegister, onNa
           </div>
         </div>
 
-        {/* Empty State when count is 0 */}
+        {/* Empty State */}
         {sorted.length === 0 ? (
           <div className="text-center py-12 px-4 bg-[#0e1320] border-2 border-dashed border-slate-800 rounded-2xl space-y-3">
             <div className="w-12 h-12 rounded-full bg-slate-900 border border-slate-700 flex items-center justify-center mx-auto text-amber-400">
@@ -503,7 +747,6 @@ export default function StoryRecommendations({ userProfile, onOpenRegister, onNa
                   {/* Top Meta Bar */}
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="flex items-center space-x-2 text-xs font-mono">
-                      {/* Ranking badge when sorted by top */}
                       {sortBy === 'top' && (
                         <span className={`px-2.5 py-0.5 rounded-md font-extrabold flex items-center space-x-1 border ${
                           rank === 1
@@ -557,20 +800,20 @@ export default function StoryRecommendations({ userProfile, onOpenRegister, onNa
                     {item.storyDetails}
                   </p>
 
-                  {/* Actions: Vote & Comment Toggle */}
-                  <div className="pt-2 flex flex-wrap items-center justify-between gap-3 text-xs sm:text-sm font-mono">
-                    <div className="flex items-center space-x-3">
+                  {/* Actions Bar (Votes, Comments & Admin Management) */}
+                  <div className="pt-2 flex flex-wrap items-center justify-between gap-3 text-xs sm:text-sm font-mono border-t border-slate-800/60">
+                    <div className="flex items-center space-x-2.5">
                       <button
                         onClick={() => handleVote(item.id)}
-                        className="bg-amber-500/20 hover:bg-amber-500 text-amber-300 hover:text-slate-950 border-2 border-amber-500/60 px-4 py-2 rounded-xl flex items-center space-x-2 transition-all font-bold shadow-md"
+                        className="bg-amber-500/20 hover:bg-amber-500 text-amber-300 hover:text-slate-950 border-2 border-amber-500/60 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl flex items-center space-x-2 transition-all font-bold shadow-md"
                       >
                         <ThumbsUp className="w-4 h-4" />
-                        <span>{item.votes} Votos de Seguidores</span>
+                        <span>{item.votes} Votos</span>
                       </button>
 
                       <button
                         onClick={() => setActiveCommentId(activeCommentId === item.id ? null : item.id)}
-                        className={`px-4 py-2 rounded-xl font-bold flex items-center space-x-1.5 transition-colors border ${
+                        className={`px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl font-bold flex items-center space-x-1.5 transition-colors border ${
                           isCommentsOpen
                             ? 'bg-slate-800 text-white border-slate-600'
                             : 'bg-slate-900 text-slate-300 hover:text-white border-slate-700'
@@ -581,16 +824,44 @@ export default function StoryRecommendations({ userProfile, onOpenRegister, onNa
                       </button>
                     </div>
 
-                    <span className="text-xs text-slate-400">
-                      Canal Oficial @XimeFer8322 & @epicclips_83
-                    </span>
+                    {/* SECCIÓN EXCLUSIVA DE ADMINISTRADOR (EDITAR / ELIMINAR) */}
+                    <div className="flex items-center space-x-2">
+                      {isAdmin ? (
+                        <>
+                          <button 
+                            onClick={() => handleTriggerEdit(item)}
+                            className="bg-amber-500/20 hover:bg-amber-500 text-amber-300 hover:text-slate-950 border border-amber-500/60 px-3 py-1.5 rounded-lg text-xs font-mono font-bold flex items-center space-x-1.5 transition-all shadow-sm"
+                            title="Editar esta historia en la base de datos"
+                          >
+                            <Edit3 className="w-3.5 h-3.5" />
+                            <span>Editar</span>
+                          </button>
+                          <button 
+                            onClick={() => handleTriggerDelete(item)}
+                            className="bg-red-950/60 hover:bg-red-600 text-red-300 hover:text-white border border-red-700/60 px-3 py-1.5 rounded-lg text-xs font-mono font-bold flex items-center space-x-1.5 transition-all shadow-sm"
+                            title="Eliminar esta historia permanentemente"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            <span>Eliminar</span>
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          onClick={() => handleTriggerEdit(item)}
+                          className="text-[11px] font-mono text-slate-400 hover:text-amber-400 bg-slate-900/60 hover:bg-slate-800 border border-slate-800 hover:border-amber-500/40 px-2.5 py-1.5 rounded-lg flex items-center space-x-1.5 transition-colors"
+                          title="Solo el administrador con clave de 9 dígitos puede editar o eliminar"
+                        >
+                          <Lock className="w-3 h-3 text-amber-500/80" />
+                          <span>Modificar (Solo Admin)</span>
+                        </button>
+                      )}
+                    </div>
                   </div>
 
-                  {/* INLINE COMMENTS SECTION WITH TOPIC WARNING & REDIRECT */}
+                  {/* INLINE COMMENTS SECTION */}
                   {isCommentsOpen && (
                     <div className="mt-4 pt-4 border-t-2 border-slate-800 space-y-4 bg-[#0a0d14] p-4 sm:p-5 rounded-2xl">
                       
-                      {/* MANDATORY TOPIC NOTICE & INVITATION TO LIVE CHAT */}
                       <div className="bg-amber-950/40 border-2 border-amber-500/60 p-4 rounded-xl space-y-2.5">
                         <div className="flex items-start space-x-2.5">
                           <AlertCircle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
@@ -604,7 +875,6 @@ export default function StoryRecommendations({ userProfile, onOpenRegister, onNa
                           </div>
                         </div>
 
-                        {/* Redirection button if user wants to discuss other topics */}
                         <div className="pt-2.5 border-t border-amber-900/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs">
                           <span className="text-slate-300">
                             ¿Quieres debatir sobre otros temas, noticias o misterios generales?
@@ -644,7 +914,7 @@ export default function StoryRecommendations({ userProfile, onOpenRegister, onNa
                         </button>
                       </form>
 
-                      {/* List of comments on this story */}
+                      {/* List of comments */}
                       <div className="space-y-2.5 pt-1">
                         {comments.length === 0 ? (
                           <div className="text-center py-6 text-xs sm:text-sm text-slate-400 font-mono bg-slate-900/50 rounded-xl border border-slate-800 p-4">
@@ -674,6 +944,341 @@ export default function StoryRecommendations({ userProfile, onOpenRegister, onNa
           </div>
         )}
       </div>
+
+      {/* ========================================================================= */}
+      {/* MODAL 1: AUTORIZACIÓN ADMINISTRATIVA CON BÓVEDA SHA-256 (CLAVE 924571958) */}
+      {/* ========================================================================= */}
+      {isAdminModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-[#0e1422] border-2 border-amber-500/80 rounded-2xl w-full max-w-md p-6 sm:p-7 shadow-2xl relative space-y-5 animate-scale-up">
+            
+            {/* Close button */}
+            <button
+              onClick={() => {
+                setIsAdminModalOpen(false);
+                setPendingAction(null);
+                setAdminError("");
+              }}
+              className="absolute top-4 right-4 text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            {/* Header */}
+            <div className="text-center space-y-2">
+              <div className="w-14 h-14 rounded-2xl bg-amber-500/20 border-2 border-amber-500/80 flex items-center justify-center text-amber-400 mx-auto shadow-lg shadow-amber-950/40">
+                <ShieldCheck className="w-8 h-8" />
+              </div>
+              <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-amber-950/80 border border-amber-600/60 text-[11px] font-mono font-bold text-amber-300">
+                <Lock className="w-3.5 h-3.5" />
+                <span>BÓVEDA PROTEGIDA • GESTIÓN ADMIN</span>
+              </div>
+              <h3 className="text-xl font-extrabold text-white">
+                Autorización Exclusiva del Administrador
+              </h3>
+              <p className="text-xs text-slate-300 leading-relaxed max-w-sm mx-auto">
+                Ingresa tu clave maestra de 9 números para autorizar la edición o eliminación de historias recomendadas.
+              </p>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handleAdminVerify} className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="block text-xs font-mono font-bold text-slate-300">
+                  Clave Maestra de 9 Números:
+                </label>
+                <div className="relative">
+                  <input
+                    type={showAdminPin ? "text" : "password"}
+                    inputMode="numeric"
+                    maxLength={9}
+                    autoFocus
+                    disabled={lockoutRemaining > 0 || isVerifyingAdmin}
+                    value={adminPin}
+                    onChange={(e) => setAdminPin(e.target.value.replace(/\D/g, ''))}
+                    placeholder="••••••••• (9 números)"
+                    className="w-full bg-[#070a12] border-2 border-slate-700 focus:border-amber-500 text-white font-mono text-center text-xl tracking-widest py-3 px-10 rounded-xl focus:outline-none transition-all disabled:opacity-50"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowAdminPin(!showAdminPin)}
+                    className="absolute right-3.5 top-3.5 text-slate-400 hover:text-white"
+                  >
+                    {showAdminPin ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Error or Lockout alerts */}
+              {lockoutRemaining > 0 ? (
+                <div className="p-3 bg-red-950/80 border border-red-500/80 rounded-xl text-xs font-mono text-red-200 text-center flex items-center justify-center space-x-2">
+                  <Clock className="w-4 h-4 text-red-400 animate-spin" />
+                  <span>Panel bloqueado por seguridad. Espera {lockoutRemaining} segundos.</span>
+                </div>
+              ) : adminError ? (
+                <div className="p-3 bg-red-950/80 border border-red-500/80 rounded-xl text-xs font-mono text-red-200 text-center">
+                  {adminError}
+                </div>
+              ) : null}
+
+              {/* Submit Button */}
+              <button
+                type="submit"
+                disabled={adminPin.length !== 9 || lockoutRemaining > 0 || isVerifyingAdmin}
+                className="w-full bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 disabled:opacity-50 text-slate-950 font-bold font-mono py-3 px-4 rounded-xl text-sm flex items-center justify-center space-x-2 shadow-lg shadow-amber-950 transition-all cursor-pointer disabled:cursor-not-allowed"
+              >
+                {isVerifyingAdmin ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-slate-950 border-t-transparent rounded-full animate-spin" />
+                    <span>Verificando Bóveda SHA-256...</span>
+                  </>
+                ) : (
+                  <>
+                    <Unlock className="w-4 h-4" />
+                    <span>Desbloquear Gestión de Historias</span>
+                  </>
+                )}
+              </button>
+
+              <div className="text-center pt-1">
+                <span className="text-[10px] font-mono text-slate-400 flex items-center justify-center space-x-1">
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 inline" />
+                  <span>Protección criptográfica SHA-256 + Anti-Fuerza Bruta</span>
+                </span>
+              </div>
+            </form>
+
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODAL 2: EDICIÓN DE HISTORIA (SOLO ADMINISTRADOR) */}
+      {/* ========================================================================= */}
+      {isEditModalOpen && editingRec && (
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-[#0e1422] border-2 border-amber-500/80 rounded-2xl w-full max-w-xl p-6 sm:p-7 shadow-2xl relative space-y-5 my-8 animate-scale-up">
+            
+            <button
+              onClick={() => {
+                setIsEditModalOpen(false);
+                setEditingRec(null);
+              }}
+              className="absolute top-4 right-4 text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center space-x-3 pb-3 border-b border-slate-800">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/70 flex items-center justify-center text-amber-400 shrink-0">
+                <Edit3 className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-lg sm:text-xl font-extrabold text-white">
+                  Editar Propuesta de Historia
+                </h3>
+                <p className="text-xs text-slate-300">
+                  Enviada originalmente por <strong>@{editingRec.author}</strong> ({editingRec.country || 'Perú'})
+                </p>
+              </div>
+            </div>
+
+            <form onSubmit={handleSaveEdit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-mono font-bold text-slate-300 mb-1">
+                  Título de la Historia:
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  className="w-full bg-[#070a12] border-2 border-slate-700 focus:border-amber-500 text-white p-3 rounded-xl focus:outline-none text-sm"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-mono font-bold text-slate-300 mb-1">
+                    Lugar o Ciudad:
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editPlace}
+                    onChange={(e) => setEditPlace(e.target.value)}
+                    className="w-full bg-[#070a12] border-2 border-slate-700 focus:border-amber-500 text-white p-3 rounded-xl focus:outline-none text-sm"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-mono font-bold text-slate-300 mb-1">
+                    Votos Acumulados:
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    required
+                    value={editVotes}
+                    onChange={(e) => setEditVotes(e.target.value)}
+                    className="w-full bg-[#070a12] border-2 border-slate-700 focus:border-amber-500 text-white p-3 rounded-xl focus:outline-none text-sm font-mono"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-mono font-bold text-slate-300 mb-1.5">
+                  Plataforma Asignada:
+                </label>
+                <div className="grid grid-cols-3 gap-2 text-xs font-mono">
+                  <button
+                    type="button"
+                    onClick={() => setEditPlatform('youtube')}
+                    className={`py-2 px-2 rounded-xl border text-center font-bold transition-all ${
+                      editPlatform === 'youtube'
+                        ? 'bg-red-950 border-red-500 text-white'
+                        : 'bg-slate-900 border-slate-800 text-slate-400'
+                    }`}
+                  >
+                    YouTube
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEditPlatform('tiktok')}
+                    className={`py-2 px-2 rounded-xl border text-center font-bold transition-all ${
+                      editPlatform === 'tiktok'
+                        ? 'bg-cyan-950 border-cyan-400 text-white'
+                        : 'bg-slate-900 border-slate-800 text-slate-400'
+                    }`}
+                  >
+                    TikTok
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEditPlatform('ambas')}
+                    className={`py-2 px-2 rounded-xl border text-center font-bold transition-all ${
+                      editPlatform === 'ambas'
+                        ? 'bg-amber-950 border-amber-500 text-white'
+                        : 'bg-slate-900 border-slate-800 text-slate-400'
+                    }`}
+                  >
+                    Ambos
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-mono font-bold text-slate-300 mb-1">
+                  Detalles y Argumento de la Historia:
+                </label>
+                <textarea
+                  rows={4}
+                  required
+                  value={editStoryDetails}
+                  onChange={(e) => setEditStoryDetails(e.target.value)}
+                  className="w-full bg-[#070a12] border-2 border-slate-700 focus:border-amber-500 text-white p-3 rounded-xl focus:outline-none text-sm resize-none leading-relaxed"
+                />
+              </div>
+
+              <div className="flex items-center justify-end space-x-3 pt-3 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsEditModalOpen(false);
+                    setEditingRec(null);
+                  }}
+                  className="px-4 py-2.5 rounded-xl text-xs font-mono font-bold text-slate-300 hover:text-white bg-slate-900 hover:bg-slate-800 border border-slate-700"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSavingEdit}
+                  className="px-5 py-2.5 rounded-xl text-xs font-mono font-bold text-slate-950 bg-amber-500 hover:bg-amber-400 flex items-center space-x-2 shadow-lg shadow-amber-950 transition-colors"
+                >
+                  {isSavingEdit ? (
+                    <span>Guardando en la Nube...</span>
+                  ) : (
+                    <>
+                      <Check className="w-4 h-4" />
+                      <span>Guardar Cambios</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODAL 3: CONFIRMACIÓN DE ELIMINACIÓN (SOLO ADMINISTRADOR) */}
+      {/* ========================================================================= */}
+      {isDeleteModalOpen && deletingRec && (
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-[#0e1422] border-2 border-red-500/80 rounded-2xl w-full max-w-md p-6 sm:p-7 shadow-2xl relative space-y-5 animate-scale-up">
+            
+            <button
+              onClick={() => {
+                setIsDeleteModalOpen(false);
+                setDeletingRec(null);
+              }}
+              className="absolute top-4 right-4 text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="text-center space-y-2">
+              <div className="w-14 h-14 rounded-2xl bg-red-500/20 border-2 border-red-500/80 flex items-center justify-center text-red-400 mx-auto shadow-lg shadow-red-950/40">
+                <AlertTriangle className="w-8 h-8" />
+              </div>
+              <h3 className="text-xl font-extrabold text-white">
+                ¿Eliminar Propuesta de Historia?
+              </h3>
+              <p className="text-xs text-slate-300 leading-relaxed">
+                Estás a punto de eliminar definitivamente la propuesta:
+              </p>
+              <div className="bg-[#070a12] p-3 rounded-xl border border-slate-800 text-left">
+                <p className="text-sm font-bold text-amber-300">"{deletingRec.title}"</p>
+                <p className="text-xs text-slate-400 mt-1">Por: @{deletingRec.author} • {deletingRec.place}</p>
+              </div>
+              <p className="text-[11px] text-red-400/90 font-mono">
+                ⚠️ Esta acción se sincronizará con la base de datos de Supabase y desaparecerá de todos los dispositivos en tiempo real.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end space-x-3 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsDeleteModalOpen(false);
+                  setDeletingRec(null);
+                }}
+                className="flex-1 px-4 py-2.5 rounded-xl text-xs font-mono font-bold text-slate-300 hover:text-white bg-slate-900 hover:bg-slate-800 border border-slate-700"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={handleConfirmDelete}
+                className="flex-1 px-4 py-2.5 rounded-xl text-xs font-mono font-bold text-white bg-red-600 hover:bg-red-500 flex items-center justify-center space-x-2 shadow-lg shadow-red-950 transition-colors"
+              >
+                {isDeleting ? (
+                  <span>Eliminando...</span>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4" />
+                    <span>Sí, Eliminar</span>
+                  </>
+                )}
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
 
     </div>
   );
