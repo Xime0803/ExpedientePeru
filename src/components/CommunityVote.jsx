@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Award, CheckCircle, Clock, Users, Flame, Send } from 'lucide-react';
 import { initialPoll } from '../data/casesData';
+import { fetchPollVotes, submitPollVote, subscribePollVotes } from '../services/dbService';
 
 export default function CommunityVote({ userAlias }) {
   const [poll, setPoll] = useState(() => {
@@ -20,31 +21,65 @@ export default function CommunityVote({ userAlias }) {
     localStorage.setItem('expediente_poll_real_v3', JSON.stringify(poll));
   }, [poll]);
 
-  const handleVote = (optionId) => {
-    if (hasVoted) return;
-
-    const newOptions = poll.options.map(opt => {
-      if (opt.id === optionId) {
-        return { ...opt, votes: opt.votes + 1 };
+  // Sincronizar votos de encuesta con Supabase en tiempo real
+  useEffect(() => {
+    const applyVotes = ({ counts, total }) => {
+      if (total > 0) {
+        setPoll(prev => {
+          const newOptions = prev.options.map(opt => {
+            const count = counts[opt.id] || 0;
+            return {
+              ...opt,
+              votes: count,
+              percentage: total > 0 ? Math.round((count / total) * 100) : 0
+            };
+          });
+          return {
+            ...prev,
+            totalVotes: total,
+            options: newOptions
+          };
+        });
       }
-      return opt;
+    };
+
+    fetchPollVotes('poll-real-v1').then(res => {
+      if (res) applyVotes(res);
     });
 
-    const newTotal = poll.totalVotes + 1;
-    const recalculated = newOptions.map(opt => ({
-      ...opt,
-      percentage: Math.round((opt.votes / newTotal) * 100)
-    }));
+    const unsub = subscribePollVotes('poll-real-v1', applyVotes);
+    return () => {
+      if (typeof unsub === 'function') unsub();
+    };
+  }, []);
 
-    setPoll({
-      ...poll,
-      totalVotes: newTotal,
-      options: recalculated
-    });
+  const handleVote = async (optionId) => {
+    if (hasVoted) return;
 
     setHasVoted(true);
     setSelectedOption(optionId);
-    localStorage.setItem('expediente_has_voted', 'true');
+    localStorage.setItem('expediente_has_voted_v3', 'true');
+
+    // Actualización visual optimista
+    setPoll(prev => {
+      const newTotal = prev.totalVotes + 1;
+      const newOptions = prev.options.map(opt => {
+        const v = opt.id === optionId ? opt.votes + 1 : opt.votes;
+        return {
+          ...opt,
+          votes: v,
+          percentage: newTotal > 0 ? Math.round((v / newTotal) * 100) : 0
+        };
+      });
+      return {
+        ...prev,
+        totalVotes: newTotal,
+        options: newOptions
+      };
+    });
+
+    // Persistir voto en la nube de Supabase
+    await submitPollVote('poll-real-v1', optionId, userAlias);
   };
 
   const handleSuggestionSubmit = (e) => {

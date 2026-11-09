@@ -25,6 +25,19 @@ export default function WhistleblowerBox({ userProfile, onOpenRegister }) {
     fetchWhistleblowerStoriesFromDb().then(data => {
       if (data && data.length > 0) {
         setStories(data);
+        localStorage.setItem('expediente_community_stories_v3', JSON.stringify(data));
+      } else {
+        const saved = localStorage.getItem('expediente_community_stories_v3');
+        if (saved) {
+          try {
+            const localList = JSON.parse(saved);
+            if (Array.isArray(localList) && localList.length > 0) {
+              for (const s of localList) {
+                submitWhistleblowerStoryToDb(s);
+              }
+            }
+          } catch (e) {}
+        }
       }
     });
   }, []);

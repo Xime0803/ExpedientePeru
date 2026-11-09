@@ -528,3 +528,65 @@ export async function voteWhistleblowerStoryInDb(id, newVotes) {
     }
   }
 }
+
+// ============================================================================
+// 6. ENCUESTAS EDITORIALES DE LA COMUNIDAD
+// ============================================================================
+
+export async function fetchPollVotes(pollId = 'poll-real-v1') {
+  if (isSupabaseConfigured && supabase) {
+    try {
+      const { data, error } = await supabase
+        .from('community_poll_votes')
+        .select('option_id')
+        .eq('poll_id', pollId);
+
+      if (!error && data) {
+        const counts = {};
+        for (const row of data) {
+          counts[row.option_id] = (counts[row.option_id] || 0) + 1;
+        }
+        return { counts, total: data.length };
+      }
+    } catch (e) {
+      console.warn("[dbService] Error al obtener votos de encuesta:", e);
+    }
+  }
+  return null;
+}
+
+export async function submitPollVote(pollId = 'poll-real-v1', optionId, voterAlias = 'Seguidor') {
+  if (isSupabaseConfigured && supabase) {
+    try {
+      const voteId = "v-" + Date.now() + "-" + Math.random().toString(36).slice(2, 7);
+      await supabase.from('community_poll_votes').insert({
+        id: voteId,
+        poll_id: pollId,
+        option_id: optionId,
+        voter_alias: voterAlias
+      });
+      return true;
+    } catch (e) {
+      console.error("[dbService] Error al emitir voto de encuesta:", e);
+      return false;
+    }
+  }
+  return false;
+}
+
+export function subscribePollVotes(pollId = 'poll-real-v1', onUpdate) {
+  if (!isSupabaseConfigured || !supabase) return () => {};
+
+  const channel = supabase
+    .channel('realtime:community_poll_votes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'community_poll_votes' }, () => {
+      fetchPollVotes(pollId).then(res => {
+        if (res) onUpdate(res);
+      });
+    })
+    .subscribe();
+
+  return () => {
+    supabase.removeChannel(channel);
+  };
+}
