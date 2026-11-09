@@ -1,11 +1,9 @@
--- =========================================================================
--- EXPEDIENTE PERÚ - Script Oficial de Base de Datos para Supabase
--- Copia y pega TODO este script en el "SQL Editor" de tu proyecto en Supabase
--- (https://supabase.com/dashboard/project/ocswfeouocwzaimhzrjs/sql)
--- y pulsa el botón verde "RUN".
--- =========================================================================
+/* =========================================================================
+   EXPEDIENTE PERÚ - Script de Base de Datos para Supabase
+   Ejecuta todo este script en: Supabase Dashboard -> SQL Editor -> RUN
+   ========================================================================= */
 
--- 1. Tabla de Cuadro de Honor / Agradecimientos de Colaboradores (Ruleta de Admin)
+-- 1. Tabla de Cuadro de Honor / Agradecimientos (Ruleta de Admin)
 CREATE TABLE IF NOT EXISTS public.community_supporters (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
@@ -62,7 +60,7 @@ CREATE TABLE IF NOT EXISTS public.story_recommendations (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 5. Tabla de Buzón Confidencial (Historias enviadas por la comunidad)
+-- 5. Tabla de Buzón Confidencial (Denuncias e historias ciudadanas)
 CREATE TABLE IF NOT EXISTS public.whistleblower_stories (
     id TEXT PRIMARY KEY,
     title TEXT NOT NULL,
@@ -86,9 +84,7 @@ CREATE TABLE IF NOT EXISTS public.community_poll_votes (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- =========================================================================
--- HABILITAR POLÍTICAS DE ACCESO PÚBLICO (ROW LEVEL SECURITY)
--- =========================================================================
+-- HABILITAR ROW LEVEL SECURITY (RLS)
 ALTER TABLE public.community_supporters ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.case_comments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.chat_messages ENABLE ROW LEVEL SECURITY;
@@ -96,73 +92,52 @@ ALTER TABLE public.story_recommendations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.whistleblower_stories ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.community_poll_votes ENABLE ROW LEVEL SECURITY;
 
--- Políticas de lectura pública para todos los dispositivos
-DROP POLICY IF EXISTS "Public select supporters" ON public.community_supporters;
-CREATE POLICY "Public select supporters" ON public.community_supporters FOR SELECT USING (true);
-
+-- POLÍTICAS DE PERMISO TOTAL PÚBLICO (Lectura, Inserción y Actualización)
 DROP POLICY IF EXISTS "Public all supporters" ON public.community_supporters;
-CREATE POLICY "Public all supporters" ON public.community_supporters FOR ALL USING (true);
+CREATE POLICY "Public all supporters" ON public.community_supporters FOR ALL USING (true) WITH CHECK (true);
 
-DROP POLICY IF EXISTS "Public select comments" ON public.case_comments;
-CREATE POLICY "Public select comments" ON public.case_comments FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Public all comments" ON public.case_comments;
+CREATE POLICY "Public all comments" ON public.case_comments FOR ALL USING (true) WITH CHECK (true);
 
-DROP POLICY IF EXISTS "Public insert comments" ON public.case_comments;
-CREATE POLICY "Public insert comments" ON public.case_comments FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS "Public all chat" ON public.chat_messages;
+CREATE POLICY "Public all chat" ON public.chat_messages FOR ALL USING (true) WITH CHECK (true);
 
-DROP POLICY IF EXISTS "Public update comments" ON public.case_comments;
-CREATE POLICY "Public update comments" ON public.case_comments FOR UPDATE USING (true);
+DROP POLICY IF EXISTS "Public all recs" ON public.story_recommendations;
+CREATE POLICY "Public all recs" ON public.story_recommendations FOR ALL USING (true) WITH CHECK (true);
 
-DROP POLICY IF EXISTS "Public select chat" ON public.chat_messages;
-CREATE POLICY "Public select chat" ON public.chat_messages FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Public all stories" ON public.whistleblower_stories;
+CREATE POLICY "Public all stories" ON public.whistleblower_stories FOR ALL USING (true) WITH CHECK (true);
 
-DROP POLICY IF EXISTS "Public insert chat" ON public.chat_messages;
-CREATE POLICY "Public insert chat" ON public.chat_messages FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS "Public all votes" ON public.community_poll_votes;
+CREATE POLICY "Public all votes" ON public.community_poll_votes FOR ALL USING (true) WITH CHECK (true);
 
-DROP POLICY IF EXISTS "Public select recs" ON public.story_recommendations;
-CREATE POLICY "Public select recs" ON public.story_recommendations FOR SELECT USING (true);
-
-DROP POLICY IF EXISTS "Public insert recs" ON public.story_recommendations;
-CREATE POLICY "Public insert recs" ON public.story_recommendations FOR INSERT WITH CHECK (true);
-
-DROP POLICY IF EXISTS "Public update recs" ON public.story_recommendations;
-CREATE POLICY "Public update recs" ON public.story_recommendations FOR UPDATE USING (true);
-
-DROP POLICY IF EXISTS "Public select stories" ON public.whistleblower_stories;
-CREATE POLICY "Public select stories" ON public.whistleblower_stories FOR SELECT USING (true);
-
-DROP POLICY IF EXISTS "Public insert stories" ON public.whistleblower_stories;
-CREATE POLICY "Public insert stories" ON public.whistleblower_stories FOR INSERT WITH CHECK (true);
-
-DROP POLICY IF EXISTS "Public update stories" ON public.whistleblower_stories;
-CREATE POLICY "Public update stories" ON public.whistleblower_stories FOR UPDATE USING (true);
-
-DROP POLICY IF EXISTS "Public select votes" ON public.community_poll_votes;
-CREATE POLICY "Public select votes" ON public.community_poll_votes FOR SELECT USING (true);
-
-DROP POLICY IF EXISTS "Public insert votes" ON public.community_poll_votes;
-CREATE POLICY "Public insert votes" ON public.community_poll_votes FOR INSERT WITH CHECK (true);
-
--- =========================================================================
 -- HABILITAR REALTIME (Sincronización en vivo entre múltiples dispositivos)
--- =========================================================================
 DO $$
 BEGIN
-  -- Agregar tablas a la publicación de realtime solo si no están
+  IF NOT EXISTS (SELECT 1 FROM pg_publication WHERE pubname = 'supabase_realtime') THEN
+    CREATE PUBLICATION supabase_realtime;
+  END IF;
+
   IF NOT EXISTS (SELECT 1 FROM pg_publication_tables WHERE pubname = 'supabase_realtime' AND tablename = 'community_supporters') THEN
     ALTER PUBLICATION supabase_realtime ADD TABLE public.community_supporters;
   END IF;
+
   IF NOT EXISTS (SELECT 1 FROM pg_publication_tables WHERE pubname = 'supabase_realtime' AND tablename = 'case_comments') THEN
     ALTER PUBLICATION supabase_realtime ADD TABLE public.case_comments;
   END IF;
+
   IF NOT EXISTS (SELECT 1 FROM pg_publication_tables WHERE pubname = 'supabase_realtime' AND tablename = 'chat_messages') THEN
     ALTER PUBLICATION supabase_realtime ADD TABLE public.chat_messages;
   END IF;
+
   IF NOT EXISTS (SELECT 1 FROM pg_publication_tables WHERE pubname = 'supabase_realtime' AND tablename = 'story_recommendations') THEN
     ALTER PUBLICATION supabase_realtime ADD TABLE public.story_recommendations;
   END IF;
+
   IF NOT EXISTS (SELECT 1 FROM pg_publication_tables WHERE pubname = 'supabase_realtime' AND tablename = 'whistleblower_stories') THEN
     ALTER PUBLICATION supabase_realtime ADD TABLE public.whistleblower_stories;
   END IF;
+
   IF NOT EXISTS (SELECT 1 FROM pg_publication_tables WHERE pubname = 'supabase_realtime' AND tablename = 'community_poll_votes') THEN
     ALTER PUBLICATION supabase_realtime ADD TABLE public.community_poll_votes;
   END IF;
