@@ -382,66 +382,94 @@ export default function App() {
         
         {/* User Identity Welcome Banner (if registered) */}
         {userProfile && (
-          <div className="mb-5 bg-[#101624] border border-slate-800 px-4 py-2.5 rounded-xl flex items-center justify-between text-xs sm:text-sm">
-            <div className="flex items-center space-x-2 text-slate-300">
-              <span className="text-xl">{userProfile.flag}</span>
-              <span>Conectado como: <strong className="text-white">{userProfile.nickname}</strong> ({userProfile.country})</span>
+          <div className="mb-6 bg-[#121927] border-2 border-slate-700 px-5 py-3.5 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-sm sm:text-base shadow-md">
+            <div className="flex items-center space-x-3 text-slate-200">
+              <span className="text-2xl" role="img" aria-label="Bandera">{userProfile.flag}</span>
+              <span>
+                Conectado como: <strong className="text-white font-extrabold text-base sm:text-lg">@{userProfile.nickname}</strong> <span className="text-slate-400">({userProfile.country})</span>
+              </span>
             </div>
             <button
               onClick={() => setIsRegisterOpen(true)}
-              className="text-xs font-mono text-amber-400 hover:underline"
+              className="text-xs sm:text-sm font-bold text-amber-300 hover:text-amber-200 underline decoration-amber-500/60 underline-offset-4 py-1"
             >
-              Cambiar seudónimo/país
+              Cambiar mi seudónimo o país ✏️
             </button>
           </div>
         )}
 
         {/* TAB 1: EXPEDIENTES (CASOS REALES) */}
         {currentTab === 'expedientes' && (
-          <div className="space-y-6">
+          <div className="space-y-8">
             
-            {/* Friendly Hero Banner */}
-            <div className="relative rounded-2xl overflow-hidden border-2 border-slate-700 bg-gradient-to-r from-red-950/60 via-[#111724] to-[#0d121c] p-6 sm:p-8 shadow-2xl">
-              <div className="max-w-3xl space-y-3">
-                <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-red-950 text-red-300 border border-red-700 text-xs font-mono font-bold">
-                  <Flame className="w-4 h-4 text-amber-400" />
+            {/* Friendly Senior-Optimized Hero Banner */}
+            <div className="relative rounded-2xl overflow-hidden border-2 border-slate-600 bg-gradient-to-br from-red-950/70 via-[#131b2c] to-[#0c121e] p-6 sm:p-8 lg:p-10 shadow-2xl">
+              <div className="max-w-4xl space-y-4">
+                
+                {/* Official Community Badge */}
+                <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-red-950 text-red-200 border-2 border-red-700 text-xs sm:text-sm font-bold">
+                  <Flame className="w-4 h-4 text-amber-400 shrink-0" />
                   <span>COMUNIDAD OFICIAL • YOUTUBE @XimeFer8322 & TIKTOK @epicclips_83</span>
                 </div>
 
-                <h1 className="text-2xl sm:text-4xl font-extrabold text-white tracking-tight leading-tight">
-                  Archivos & Casos Virales del <span className="text-red-500">Perú Real</span>
+                <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight leading-tight">
+                  Archivos & Crónicas Reales del <span className="text-red-500">Perú</span>
                 </h1>
 
-                <p className="text-sm sm:text-base text-slate-200 leading-relaxed">
-                  Bienvenido a la comunidad oficial. Revisa los expedientes reales con documentos de hemeroteca, comparte tus teorías con tu seudónimo y país, y sugiere nuevas historias para los canales de YouTube y TikTok.
+                <p className="text-base sm:text-lg lg:text-xl text-slate-200 leading-relaxed max-w-3xl font-medium">
+                  Bienvenido a este espacio de lectura, memoria y análisis respetuoso de sucesos históricos del Perú. Aquí podrás leer cada investigación con letra clara y grande, compartir tus recuerdos de aquellos años y proponer qué historia grabaremos en video.
                 </p>
 
+                {/* 3-Step Reading Guide for Seniors */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-3 pb-2">
+                  <div className="bg-[#0b101c]/90 border border-slate-700 rounded-xl p-3.5 flex items-start space-x-3">
+                    <span className="text-2xl shrink-0">📖</span>
+                    <div>
+                      <p className="text-sm font-extrabold text-white">1. Elige una Historia</p>
+                      <p className="text-xs text-slate-300 leading-relaxed mt-0.5">
+                        Toca el botón <strong>«Leer Expediente»</strong> en cualquier recuadro.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="bg-[#0b101c]/90 border border-slate-700 rounded-xl p-3.5 flex items-start space-x-3">
+                    <span className="text-2xl shrink-0">💬</span>
+                    <div>
+                      <p className="text-sm font-extrabold text-white">2. Comparte tus Recuerdos</p>
+                      <p className="text-xs text-slate-300 leading-relaxed mt-0.5">
+                        Escribe tus testimonios o teorías con tu seudónimo seguro.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="bg-[#0b101c]/90 border border-slate-700 rounded-xl p-3.5 flex items-start space-x-3">
+                    <span className="text-2xl shrink-0">🗳️</span>
+                    <div>
+                      <p className="text-sm font-extrabold text-white">3. Ayúdanos a Grabar</p>
+                      <p className="text-xs text-slate-300 leading-relaxed mt-0.5">
+                        Vota las historias para que salgan en YouTube y TikTok.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
                 {/* Primary Action Buttons */}
-                <div className="pt-3 flex flex-wrap gap-3 text-xs sm:text-sm font-bold">
+                <div className="pt-2 flex flex-wrap gap-4 text-sm sm:text-base font-extrabold">
                   <button 
                     onClick={() => setCurrentTab('recomendaciones')}
-                    className="px-5 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold flex items-center space-x-2 shadow-lg shadow-amber-950/40 transition-colors"
+                    className="px-6 py-3.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black flex items-center space-x-2.5 shadow-xl shadow-amber-950/50 transition-all border-2 border-amber-300 focus:outline-none focus:ring-4 focus:ring-amber-400/50"
                   >
-                    <Sparkles className="w-4 h-4 text-slate-950" />
+                    <Sparkles className="w-5 h-5 text-slate-950 shrink-0" />
                     <span>Recomendar Caso para YouTube / TikTok</span>
                   </button>
 
                   <button 
                     onClick={() => setIsSupportOpen(true)}
-                    className="px-5 py-3 rounded-xl bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white flex items-center space-x-2 shadow-lg shadow-red-950 transition-colors"
+                    className="px-6 py-3.5 rounded-xl bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white flex items-center space-x-2.5 shadow-xl shadow-red-950 transition-all border-2 border-red-400 focus:outline-none focus:ring-4 focus:ring-red-500/50"
                   >
-                    <Heart className="w-4 h-4 fill-white" />
+                    <Heart className="w-5 h-5 fill-white shrink-0" />
                     <span>Apoyo Voluntario (Yape / Plin / Dale)</span>
                   </button>
-                </div>
-              </div>
-
-              {/* Decorative Seal */}
-              <div className="hidden lg:block absolute right-8 top-1/2 -translate-y-1/2 opacity-25 pointer-events-none rotate-12">
-                <div className="w-44 h-44 rounded-full border-4 border-dashed border-red-500 flex flex-col items-center justify-center p-4 text-center font-mono text-xs text-red-300 font-bold uppercase">
-                  <span>CASOS REALES</span>
-                  <span className="text-2xl font-black">PERÚ</span>
-                  <span>HISTORIAS</span>
                 </div>
               </div>
             </div>
@@ -452,66 +480,100 @@ export default function App() {
               onOpenAdmin={() => setIsAdminGratitudeOpen(true)}
             />
 
-            {/* Filters & Search */}
-            <div className="bg-[#101522] border-2 border-slate-700 rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs sm:text-sm font-mono">
-              {/* Search */}
-              <div className="relative w-full sm:w-80">
-                <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Buscar caso, región o palabra clave..."
-                  className="w-full bg-[#0a0d14] border-2 border-slate-700 rounded-xl pl-10 pr-3 py-2.5 text-white placeholder-slate-400 focus:outline-none focus:border-red-500 text-sm font-sans"
-                />
+            {/* Filters & Search - Senior Friendly */}
+            <div className="bg-[#121927] border-2 border-slate-600 rounded-2xl p-5 sm:p-6 space-y-4 shadow-lg">
+              
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                
+                {/* Search Input */}
+                <div className="flex-1 relative">
+                  <label htmlFor="search-cases" className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+                    🔍 Buscador de Historias & Regiones:
+                  </label>
+                  <div className="relative">
+                    <Search className="w-5 h-5 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <input
+                      id="search-cases"
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Escribe el nombre de un caso, ciudad (ej. Arequipa, Lima, Cusco)..."
+                      className="w-full bg-[#0a0f1a] border-2 border-slate-600 focus:border-red-500 rounded-xl pl-12 pr-12 py-3 text-white placeholder-slate-400 focus:outline-none text-base sm:text-lg font-medium transition-colors"
+                    />
+                    {searchQuery && (
+                      <button
+                        onClick={() => setSearchQuery('')}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-2.5 py-1.5 rounded-lg border border-slate-600 font-bold"
+                        title="Borrar búsqueda"
+                      >
+                        ✕ Borrar
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Counter */}
+                <div className="shrink-0 text-sm font-bold text-slate-300 bg-[#0b101c] px-4 py-3 rounded-xl border border-slate-700 flex items-center space-x-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+                  <span>{filteredCases.length} {filteredCases.length === 1 ? 'historia disponible' : 'historias disponibles'}</span>
+                </div>
               </div>
 
-              {/* Category Pills */}
-              <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-start sm:justify-end">
-                <span className="text-slate-300 font-bold hidden lg:inline">Categoría:</span>
-                {[
-                  { id: 'todas', label: 'Todos' },
-                  { id: 'injusticia provincial', label: '⚖️ Injusticia en Provincia' },
-                  { id: 'crónica policial', label: 'Crónica Policial' },
-                  { id: 'misterio urbano', label: 'Misterio Urbano' },
-                  { id: 'viral reciente', label: 'Viral Redes' },
-                ].map(cat => (
-                  <button
-                    key={cat.id}
-                    onClick={() => setSelectedCategory(cat.id)}
-                    className={`px-3 py-1.5 rounded-lg font-bold transition-colors ${
-                      selectedCategory === cat.id
-                        ? 'bg-red-600 text-white'
-                        : 'bg-slate-900 text-slate-300 hover:text-white border border-slate-700'
-                    }`}
-                  >
-                    {cat.label}
-                  </button>
-                ))}
+              {/* Category Filter Buttons */}
+              <div className="pt-2 border-t border-slate-700/80">
+                <p className="text-xs font-bold text-slate-300 uppercase tracking-wider mb-2.5">
+                  Filtrar por Tema o Categoría:
+                </p>
+                <div className="flex flex-wrap items-center gap-2.5">
+                  {[
+                    { id: 'todas', label: 'Todos los Temas' },
+                    { id: 'injusticia provincial', label: '⚖️ Injusticia en Provincia' },
+                    { id: 'crónica policial', label: '🚔 Crónica Policial' },
+                    { id: 'misterio urbano', label: '🏛️ Misterio Histórico' },
+                    { id: 'viral reciente', label: '📱 Viral en Redes' },
+                  ].map(cat => (
+                    <button
+                      key={cat.id}
+                      onClick={() => setSelectedCategory(cat.id)}
+                      className={`px-4 py-2.5 rounded-xl font-bold text-sm sm:text-base transition-all border-2 ${
+                        selectedCategory === cat.id
+                          ? 'bg-red-600 border-red-400 text-white shadow-md'
+                          : 'bg-[#0a0f1a] text-slate-300 hover:text-white border-slate-700 hover:border-slate-500'
+                      }`}
+                    >
+                      {cat.label}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
 
             {/* Cases Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
               {filteredCases.map(item => (
                 <CaseCard 
                   key={item.id} 
                   caseItem={item} 
                   onOpenDetail={setSelectedCase} 
+                  onOpenSupport={() => setIsSupportOpen(true)}
                 />
               ))}
             </div>
 
             {filteredCases.length === 0 && (
-              <div className="text-center py-12 bg-[#0e1320] border-2 border-slate-800 rounded-2xl">
-                <p className="text-base text-slate-300 font-sans">
-                  No se encontraron casos bajo ese criterio de búsqueda.
+              <div className="text-center py-16 bg-[#121927] border-2 border-slate-700 rounded-2xl p-6 space-y-4">
+                <span className="text-4xl">🔍</span>
+                <p className="text-lg text-white font-extrabold">
+                  No encontramos ninguna historia con «{searchQuery}»
+                </p>
+                <p className="text-sm text-slate-300 max-w-md mx-auto">
+                  Prueba buscando otra palabra clave, ciudad o haz clic en el botón de abajo para ver todas las investigaciones.
                 </p>
                 <button
                   onClick={() => { setSearchQuery(''); setSelectedCategory('todas'); }}
-                  className="mt-3 text-sm text-amber-400 hover:underline font-bold"
+                  className="px-5 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-base font-black shadow-lg"
                 >
-                  Ver todos los casos
+                  Ver todas las historias disponibles
                 </button>
               </div>
             )}

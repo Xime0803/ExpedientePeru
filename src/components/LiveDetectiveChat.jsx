@@ -199,7 +199,7 @@ export default function LiveDetectiveChat({ userProfile, onOpenRegister }) {
                 <span className="text-[10px] sm:text-xs font-mono text-slate-400">{msg.time}</span>
               </div>
 
-              <p className="text-xs sm:text-sm text-slate-100 leading-relaxed font-sans pl-6">
+              <p className="text-sm sm:text-base text-slate-100 leading-relaxed font-sans pl-2 sm:pl-6 pt-1">
                 {msg.text}
               </p>
             </div>
