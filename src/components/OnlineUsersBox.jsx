@@ -275,7 +275,7 @@ export default function OnlineUsersBox({
                 <span>En Línea ({totalActivos})</span>
               </button>
 
-              {/* Pestaña 2: Visitas (Protegida: Solo Admin) */}
+              {/* Pestaña 2: Visitas (Protegida) */}
               {isAdmin ? (
                 <button
                   type="button"
@@ -285,13 +285,10 @@ export default function OnlineUsersBox({
                       ? 'border-cyan-500 text-cyan-300 bg-cyan-950/20'
                       : 'border-transparent text-slate-400 hover:text-slate-200'
                   }`}
-                  title="Historial de ingresos (Sesión de Administrador activa)"
+                  title="Historial de ingresos"
                 >
                   <Clock className="w-3.5 h-3.5 text-cyan-400" />
                   <span>Visitas ({visitors.length})</span>
-                  <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-amber-950 text-amber-300 border border-amber-600 font-bold ml-1">
-                    ADMIN
-                  </span>
                 </button>
               ) : (
                 <button
@@ -302,10 +299,10 @@ export default function OnlineUsersBox({
                     setIsAdminModalOpen(true);
                   }}
                   className="py-2 px-2.5 flex items-center justify-center space-x-1.5 transition-colors border-b-2 border-transparent text-slate-400 hover:text-amber-300 group"
-                  title="El registro de visitas es privado y exclusivo del administrador"
+                  title="El registro de visitas es privado"
                 >
                   <Lock className="w-3.5 h-3.5 text-amber-500/80 group-hover:scale-110 transition-transform" />
-                  <span>Visitas (Solo Admin)</span>
+                  <span>Visitas</span>
                 </button>
               )}
             </div>
