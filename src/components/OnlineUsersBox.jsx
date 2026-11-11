@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { 
   Users, ChevronDown, ChevronUp, Radio, Globe, Shield, Sparkles, 
   Clock, Calendar, Smartphone, Monitor, Tablet, Maximize2, Search, 
-  X, RefreshCw, Eye
+  X, RefreshCw, Eye, EyeOff, Lock, ShieldCheck, CheckCircle2
 } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../services/supabaseClient';
 import { fetchRecentVisitors, subscribeVisitors } from '../services/dbService';
+import { verifyAdminCredentials, getAdminSecurityStatus } from '../security/securityVault';
+import CountryFlag from './CountryFlag';
 
 export default function OnlineUsersBox({ 
   userProfile, 
@@ -19,6 +21,78 @@ export default function OnlineUsersBox({
   const [isVisitorModalOpen, setIsVisitorModalOpen] = useState(false);
   const [searchFilter, setSearchFilter] = useState('');
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // ESTADO DE SEGURIDAD ADMINISTRATIVO (Bóveda Criptográfica SHA-256)
+  const [isAdmin, setIsAdmin] = useState(() => {
+    return typeof window !== 'undefined' && sessionStorage.getItem('exp_admin_active_session') === 'true';
+  });
+  const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
+  const [adminPin, setAdminPin] = useState("");
+  const [showAdminPin, setShowAdminPin] = useState(false);
+  const [isVerifyingAdmin, setIsVerifyingAdmin] = useState(false);
+  const [adminError, setAdminError] = useState("");
+  const [lockoutRemaining, setLockoutRemaining] = useState(0);
+
+  // Escuchar si el estado de bloqueo cambia al abrir el modal
+  useEffect(() => {
+    if (isAdminModalOpen) {
+      const status = getAdminSecurityStatus();
+      if (status.isLocked) {
+        setLockoutRemaining(status.remainingSeconds);
+      }
+    }
+  }, [isAdminModalOpen]);
+
+  // Temporizador regresivo de bloqueo anti-fuerza bruta
+  useEffect(() => {
+    let timer;
+    if (lockoutRemaining > 0) {
+      timer = setInterval(() => {
+        setLockoutRemaining(prev => {
+          if (prev <= 1) {
+            setAdminError("");
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [lockoutRemaining]);
+
+  const handleAdminVerify = async (e) => {
+    e.preventDefault();
+    if (!adminPin || isVerifyingAdmin) return;
+    setIsVerifyingAdmin(true);
+    setAdminError("");
+
+    try {
+      const result = await verifyAdminCredentials(adminPin);
+      if (result.success) {
+        setIsAdmin(true);
+        sessionStorage.setItem('exp_admin_active_session', 'true');
+        setIsAdminModalOpen(false);
+        setAdminPin("");
+        setActiveTab('history');
+      } else {
+        if (result.isLocked) {
+          setLockoutRemaining(result.remainingSeconds);
+        }
+        setAdminError(result.message || "Clave de administrador incorrecta.");
+      }
+    } catch (err) {
+      setAdminError("Error al verificar credenciales.");
+    } finally {
+      setIsVerifyingAdmin(false);
+    }
+  };
+
+  const handleAdminLogout = () => {
+    setIsAdmin(false);
+    sessionStorage.removeItem('exp_admin_active_session');
+    setActiveTab('online');
+    setIsVisitorModalOpen(false);
+  };
 
   // 1. Supabase Realtime Presence: Solo usuarios 100% reales conectados en vivo
   useEffect(() => {
@@ -117,38 +191,6 @@ export default function OnlineUsersBox({
 
   const totalActivos = displayList.length;
 
-  // Renderizador de bandera nítida
-  const renderFlag = (country, flagEmoji) => {
-    if (country === 'Perú' || flagEmoji === '🇵🇪') {
-      return (
-        <span className="w-4 h-3 inline-flex rounded-[2px] overflow-hidden border border-slate-700 shrink-0 shadow-sm" title="Perú">
-          <span className="w-1/3 h-full bg-red-600"></span>
-          <span className="w-1/3 h-full bg-white"></span>
-          <span className="w-1/3 h-full bg-red-600"></span>
-        </span>
-      );
-    }
-    if (country === 'Chile' || flagEmoji === '🇨🇱') {
-      return (
-        <span className="w-4 h-3 inline-flex flex-col rounded-[2px] overflow-hidden border border-slate-700 shrink-0 shadow-sm" title="Chile">
-          <span className="w-full h-1/2 flex">
-            <span className="w-1/2 h-full bg-blue-700"></span>
-            <span className="w-1/2 h-full bg-white"></span>
-          </span>
-          <span className="w-full h-1/2 bg-red-600"></span>
-        </span>
-      );
-    }
-    if (country === 'EE.UU.' || flagEmoji === '🇺🇸') {
-      return (
-        <span className="w-4 h-3 inline-flex rounded-[2px] overflow-hidden border border-slate-700 shrink-0 shadow-sm bg-blue-900 text-[8px] text-white items-center justify-center font-bold" title="EE.UU.">
-          USA
-        </span>
-      );
-    }
-    return <span className="text-xs shrink-0">{flagEmoji || '🌎'}</span>;
-  };
-
   // Icono de dispositivo
   const getDeviceIcon = (deviceStr = '') => {
     const s = deviceStr.toLowerCase();
@@ -168,35 +210,19 @@ export default function OnlineUsersBox({
       (v.visitorAlias && v.visitorAlias.toLowerCase().includes(query)) ||
       (v.formattedDate && v.formattedDate.toLowerCase().includes(query)) ||
       (v.country && v.country.toLowerCase().includes(query)) ||
-      (v.device && v.device.toLowerCase().includes(query))
+      (v.device && v.device.toLowerCase().includes(query)) ||
+      (v.browser && v.browser.toLowerCase().includes(query))
     );
   });
 
-  const containerClasses = isFloating
-    ? "fixed bottom-5 right-5 z-40 w-80 sm:w-88 shadow-[0_10px_40px_rgba(0,0,0,0.85)]"
-    : "w-full";
-
   return (
-    <div className={containerClasses}>
-      
-      {/* Estado minimizado */}
-      {!isOpen && isFloating ? (
-        <button
-          onClick={() => setIsOpen(true)}
-          className="ml-auto flex items-center space-x-2.5 px-4 py-2.5 rounded-full bg-[#0b0f19] border-2 border-emerald-500/70 text-white font-mono text-xs font-bold shadow-2xl hover:scale-105 transition-all group backdrop-blur-md"
-          title="Ver usuarios en línea y registro de visitantes"
-        >
-          <span className="relative flex h-2.5 w-2.5">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
-          </span>
-          <span className="text-slate-200 group-hover:text-emerald-300">
-            {totalActivos} {totalActivos === 1 ? 'activo' : 'activos'} • {visitors.length} visitas
-          </span>
-          <ChevronUp className="w-4 h-4 text-emerald-400" />
-        </button>
-      ) : (
-        /* Recuadro Oscuro de Usuarios y Visitas */
+    <>
+      {/* ========================================================================= */}
+      {/* CUADRO FLOTANTE INFERIOR DERECHO */}
+      {/* ========================================================================= */}
+      <div className={`z-30 w-72 sm:w-84 transition-all duration-300 font-sans ${
+        isFloating ? 'fixed bottom-4 right-4' : 'relative w-full'
+      }`}>
         <div className="bg-[#0b0f19] border-2 border-slate-700/90 hover:border-emerald-500/60 rounded-2xl overflow-hidden shadow-2xl transition-all duration-200">
           
           {/* Cabecera Principal */}
@@ -232,13 +258,14 @@ export default function OnlineUsersBox({
             </button>
           </div>
 
-          {/* Navegación por pestañas: 'En Línea' vs 'Registro de Visitas' */}
+          {/* Navegación por pestañas: 'En Línea' vs 'Visitas (Solo Admin)' */}
           {isOpen && (
             <div className="grid grid-cols-2 bg-[#080c14] border-b border-slate-800 text-xs font-mono font-bold">
+              {/* Pestaña 1: En Línea (Pública para toda la comunidad) */}
               <button
                 type="button"
                 onClick={() => setActiveTab('online')}
-                className={`py-2 px-3 flex items-center justify-center space-x-1.5 transition-colors border-b-2 ${
+                className={`py-2 px-2.5 flex items-center justify-center space-x-1.5 transition-colors border-b-2 ${
                   activeTab === 'online'
                     ? 'border-emerald-500 text-emerald-300 bg-emerald-950/20'
                     : 'border-transparent text-slate-400 hover:text-slate-200'
@@ -248,24 +275,45 @@ export default function OnlineUsersBox({
                 <span>En Línea ({totalActivos})</span>
               </button>
 
-              <button
-                type="button"
-                onClick={() => setActiveTab('history')}
-                className={`py-2 px-3 flex items-center justify-center space-x-1.5 transition-colors border-b-2 ${
-                  activeTab === 'history'
-                    ? 'border-cyan-500 text-cyan-300 bg-cyan-950/20'
-                    : 'border-transparent text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                <Clock className="w-3.5 h-3.5 text-cyan-400" />
-                <span>Visitas ({visitors.length})</span>
-              </button>
+              {/* Pestaña 2: Visitas (Protegida: Solo Admin) */}
+              {isAdmin ? (
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('history')}
+                  className={`py-2 px-2.5 flex items-center justify-center space-x-1.5 transition-colors border-b-2 ${
+                    activeTab === 'history'
+                      ? 'border-cyan-500 text-cyan-300 bg-cyan-950/20'
+                      : 'border-transparent text-slate-400 hover:text-slate-200'
+                  }`}
+                  title="Historial de ingresos (Sesión de Administrador activa)"
+                >
+                  <Clock className="w-3.5 h-3.5 text-cyan-400" />
+                  <span>Visitas ({visitors.length})</span>
+                  <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-amber-950 text-amber-300 border border-amber-600 font-bold ml-1">
+                    ADMIN
+                  </span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAdminError("");
+                    setAdminPin("");
+                    setIsAdminModalOpen(true);
+                  }}
+                  className="py-2 px-2.5 flex items-center justify-center space-x-1.5 transition-colors border-b-2 border-transparent text-slate-400 hover:text-amber-300 group"
+                  title="El registro de visitas es privado y exclusivo del administrador"
+                >
+                  <Lock className="w-3.5 h-3.5 text-amber-500/80 group-hover:scale-110 transition-transform" />
+                  <span>Visitas (Solo Admin)</span>
+                </button>
+              )}
             </div>
           )}
 
           {isOpen && (
             <>
-              {/* PESTAÑA 1: USUARIOS EN LÍNEA EN VIVO */}
+              {/* PESTAÑA 1: USUARIOS EN LÍNEA EN VIVO (Pública) */}
               {activeTab === 'online' && (
                 <div>
                   {totalActivos === 0 ? (
@@ -295,7 +343,7 @@ export default function OnlineUsersBox({
                           >
                             <div className="flex items-center space-x-2 min-w-0">
                               <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 shrink-0 shadow-sm shadow-emerald-400"></span>
-                              {renderFlag(u.country, u.flag)}
+                              <CountryFlag country={u.country} flag={u.flag} className="w-4 h-3" />
                               <span className="truncate font-sans font-extrabold text-white text-xs sm:text-sm">
                                 {u.nickname}
                               </span>
@@ -326,72 +374,217 @@ export default function OnlineUsersBox({
                 </div>
               )}
 
-              {/* PESTAÑA 2: REGISTRO HISTÓRICO DE VISITANTES (FECHA Y HORA) */}
+              {/* PESTAÑA 2: REGISTRO HISTÓRICO DE VISITANTES (SOLO ADMINISTRADOR) */}
               {activeTab === 'history' && (
                 <div>
-                  <div className="p-2 space-y-1.5 max-h-56 overflow-y-auto divide-y divide-slate-800/40 pr-1 select-none">
-                    {visitors.length === 0 ? (
-                      <div className="p-4 text-center text-xs text-slate-400 font-mono">
-                        Registrando ingresos de visitantes...
+                  {!isAdmin ? (
+                    /* Tarjeta de Protección para No Administradores */
+                    <div className="p-4 text-center space-y-3 bg-[#0a0e18]">
+                      <div className="w-10 h-10 rounded-full bg-amber-500/10 border border-amber-500/40 flex items-center justify-center text-amber-400 mx-auto">
+                        <Lock className="w-5 h-5" />
                       </div>
-                    ) : (
-                      visitors.slice(0, 15).map((v, idx) => (
-                        <div 
-                          key={v.id || idx}
-                          className="px-2.5 py-2 rounded-xl text-xs bg-slate-900/60 hover:bg-slate-900 transition-colors space-y-1"
+                      <h4 className="text-xs sm:text-sm font-bold text-white">Registro de Visitas Protegido</h4>
+                      <p className="text-[11px] text-slate-300 leading-relaxed max-w-xs mx-auto">
+                        Por privacidad y seguridad, la bitácora detallada de accesos con fecha y hora es visible exclusivamente para el administrador.
+                      </p>
+                      <button
+                        onClick={() => {
+                          setAdminError("");
+                          setAdminPin("");
+                          setIsAdminModalOpen(true);
+                        }}
+                        className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-xs shadow-md transition-colors inline-flex items-center space-x-1.5"
+                      >
+                        <Lock className="w-3.5 h-3.5" />
+                        <span>Desbloquear como Administrador</span>
+                      </button>
+                    </div>
+                  ) : (
+                    /* Vista Desbloqueada para el Administrador */
+                    <div>
+                      {/* Barra de Sesión Admin Activa */}
+                      <div className="px-3 py-1.5 bg-amber-950/60 border-b border-amber-600/40 flex items-center justify-between text-[10px] font-mono">
+                        <span className="text-amber-300 font-bold flex items-center space-x-1">
+                          <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
+                          <span>Auditoría Privada Admin</span>
+                        </span>
+                        <button
+                          onClick={handleAdminLogout}
+                          className="text-slate-300 hover:text-white underline hover:no-underline"
+                          title="Cerrar sesión de administrador"
                         >
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center space-x-1.5 min-w-0">
-                              {renderFlag(v.country, v.flag)}
-                              <span className="truncate font-sans font-bold text-white text-xs">
-                                {v.visitorAlias}
-                              </span>
-                            </div>
-                            <div className="flex items-center space-x-1 text-[10px] font-mono text-cyan-300">
-                              {getDeviceIcon(v.device)}
-                              <span className="truncate max-w-[90px]">{v.device}</span>
-                            </div>
-                          </div>
+                          Cerrar Sesión
+                        </button>
+                      </div>
 
-                          {/* Fecha y Hora Exacta de Ingreso */}
-                          <div className="flex items-center justify-between text-[10px] font-mono text-slate-400 pt-0.5">
-                            <span className="flex items-center text-amber-300/90 font-medium">
-                              <Clock className="w-3 h-3 mr-1 text-amber-400 shrink-0" />
-                              {v.formattedDate}
-                            </span>
-                            <span className="text-slate-500">{v.browser}</span>
+                      <div className="p-2 space-y-1.5 max-h-56 overflow-y-auto divide-y divide-slate-800/40 pr-1 select-none">
+                        {visitors.length === 0 ? (
+                          <div className="p-4 text-center text-xs text-slate-400 font-mono">
+                            Registrando ingresos de visitantes...
                           </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
+                        ) : (
+                          visitors.slice(0, 15).map((v, idx) => (
+                            <div 
+                              key={v.id || idx}
+                              className="px-2.5 py-2 rounded-xl text-xs bg-slate-900/60 hover:bg-slate-900 transition-colors space-y-1"
+                            >
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center space-x-1.5 min-w-0">
+                                  <CountryFlag country={v.country} flag={v.flag} className="w-4 h-3" />
+                                  <span className="truncate font-sans font-bold text-white text-xs">
+                                    {v.visitorAlias}
+                                  </span>
+                                </div>
+                                <div className="flex items-center space-x-1 text-[10px] font-mono text-cyan-300">
+                                  {getDeviceIcon(v.device)}
+                                  <span className="truncate max-w-[90px]">{v.device}</span>
+                                </div>
+                              </div>
 
-                  {/* Botón para abrir la Bitácora Completa */}
-                  <div className="p-2 bg-[#080c14] border-t border-slate-800/80 flex items-center justify-between gap-2">
-                    <span className="text-[10px] font-mono text-slate-400">
-                      Total: <strong className="text-cyan-400">{visitors.length}</strong> ingresos
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setIsVisitorModalOpen(true)}
-                      className="px-2.5 py-1 rounded-lg bg-cyan-950/80 hover:bg-cyan-900 text-cyan-300 border border-cyan-700/60 text-[10px] font-mono font-bold flex items-center space-x-1 transition-colors"
-                    >
-                      <Maximize2 className="w-3 h-3" />
-                      <span>Ver Bitácora Completa</span>
-                    </button>
-                  </div>
+                              {/* Fecha y Hora Exacta de Ingreso */}
+                              <div className="flex items-center justify-between text-[10px] font-mono text-slate-400 pt-0.5">
+                                <span className="flex items-center text-amber-300/90 font-medium">
+                                  <Clock className="w-3 h-3 mr-1 text-amber-400 shrink-0" />
+                                  {v.formattedDate}
+                                </span>
+                                <span className="text-slate-500">{v.browser}</span>
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+
+                      {/* Botón para abrir la Bitácora Completa */}
+                      <div className="p-2 bg-[#080c14] border-t border-slate-800/80 flex items-center justify-between gap-2">
+                        <span className="text-[10px] font-mono text-slate-400">
+                          Total: <strong className="text-cyan-400">{visitors.length}</strong> ingresos
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setIsVisitorModalOpen(true)}
+                          className="px-2.5 py-1 rounded-lg bg-cyan-950/80 hover:bg-cyan-900 text-cyan-300 border border-cyan-700/60 text-[10px] font-mono font-bold flex items-center space-x-1 transition-colors"
+                        >
+                          <Maximize2 className="w-3 h-3" />
+                          <span>Ver Bitácora Completa</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </>
           )}
 
         </div>
+      </div>
+
+      {/* ========================================================================= */}
+      {/* MODAL 1: AUTORIZACIÓN EXCLUSIVA DE ADMINISTRADOR (BÓVEDA SHA-256) */}
+      {/* ========================================================================= */}
+      {isAdminModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-[#0e1422] border-2 border-amber-500/80 rounded-2xl w-full max-w-md p-6 shadow-2xl relative space-y-4 animate-in fade-in zoom-in-95 duration-200">
+            
+            {/* Botón Cerrar */}
+            <button
+              onClick={() => {
+                setIsAdminModalOpen(false);
+                setAdminPin("");
+                setAdminError("");
+              }}
+              className="absolute top-4 right-4 text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            {/* Cabecera */}
+            <div className="text-center space-y-2">
+              <div className="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-500/70 flex items-center justify-center text-amber-400 mx-auto shadow-lg shadow-amber-950/60">
+                <ShieldCheck className="w-6 h-6" />
+              </div>
+              <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-amber-950/80 border border-amber-600/60 text-[11px] font-mono font-bold text-amber-300">
+                <Lock className="w-3.5 h-3.5" />
+                <span>BÓVEDA PROTEGIDA • HISTORIAL DE VISITAS</span>
+              </div>
+              <h3 className="text-xl font-extrabold text-white">
+                Autorización del Administrador
+              </h3>
+              <p className="text-xs text-slate-300 leading-relaxed max-w-sm mx-auto">
+                Ingresa tu clave de acceso autorizada para visualizar la auditoría detallada de visitas con fecha, hora y dispositivos.
+              </p>
+            </div>
+
+            {/* Formulario */}
+            <form onSubmit={handleAdminVerify} className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="block text-xs font-mono font-bold text-slate-300">
+                  Clave de Acceso:
+                </label>
+                <div className="relative">
+                  <input
+                    type={showAdminPin ? "text" : "password"}
+                    autoFocus
+                    disabled={lockoutRemaining > 0 || isVerifyingAdmin}
+                    value={adminPin}
+                    onChange={(e) => setAdminPin(e.target.value)}
+                    placeholder={lockoutRemaining > 0 ? "Acceso Bloqueado" : "••••••••••••"}
+                    className="w-full bg-[#070a12] border-2 border-slate-700 focus:border-amber-500 text-white font-mono text-center text-xl tracking-widest py-3 px-10 rounded-xl focus:outline-none transition-all disabled:opacity-50"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowAdminPin(!showAdminPin)}
+                    className="absolute right-3.5 top-3.5 text-slate-400 hover:text-white"
+                  >
+                    {showAdminPin ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Alertas de error o bloqueo */}
+              {lockoutRemaining > 0 ? (
+                <div className="p-3 bg-red-950/80 border border-red-500/80 rounded-xl text-xs font-mono text-red-200 text-center flex items-center justify-center space-x-2">
+                  <Clock className="w-4 h-4 text-red-400 animate-spin" />
+                  <span>Panel bloqueado por seguridad. Espera {lockoutRemaining} segundos.</span>
+                </div>
+              ) : adminError ? (
+                <div className="p-3 bg-red-950/60 border border-red-500/60 rounded-xl text-xs text-red-300 text-center font-bold">
+                  {adminError}
+                </div>
+              ) : null}
+
+              {/* Botón de desbloqueo */}
+              <button
+                type="submit"
+                disabled={!adminPin.trim() || lockoutRemaining > 0 || isVerifyingAdmin}
+                className="w-full py-3.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 disabled:opacity-50 text-slate-950 font-extrabold text-sm rounded-xl transition-all shadow-lg shadow-amber-950/50 flex items-center justify-center space-x-2"
+              >
+                {isVerifyingAdmin ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-slate-950 border-t-transparent rounded-full animate-spin" />
+                    <span>Verificando Bóveda SHA-256...</span>
+                  </>
+                ) : (
+                  <>
+                    <Lock className="w-4 h-4" />
+                    <span>Verificar y Desbloquear Historial</span>
+                  </>
+                )}
+              </button>
+
+              <p className="text-[11px] text-slate-400 text-center font-mono flex items-center justify-center space-x-1">
+                <Shield className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Protección criptográfica SHA-256 + Anti-Fuerza Bruta</span>
+              </p>
+            </form>
+
+          </div>
+        </div>
       )}
 
       {/* ========================================================================= */}
-      {/* MODAL: BITÁCORA DETALLADA DE VISITANTES CON FECHA Y HORA */}
+      {/* MODAL 2: BITÁCORA DETALLADA DE VISITANTES CON FECHA Y HORA (SOLO ADMIN) */}
       {/* ========================================================================= */}
-      {isVisitorModalOpen && (
+      {isVisitorModalOpen && isAdmin && (
         <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
           <div className="bg-[#0e1422] border-2 border-cyan-500/80 rounded-2xl w-full max-w-3xl p-5 sm:p-7 shadow-2xl relative space-y-4 max-h-[90vh] flex flex-col">
             
@@ -410,27 +603,31 @@ export default function OnlineUsersBox({
                   <Calendar className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-lg sm:text-xl font-extrabold text-white flex items-center space-x-2">
-                    <span>Registro Oficial de Visitantes</span>
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-950 text-cyan-300 border border-cyan-700">
-                      Hora Perú (America/Lima)
+                  <div className="flex items-center space-x-2">
+                    <h3 className="text-lg sm:text-xl font-extrabold text-white">
+                      Registro Oficial de Visitantes
+                    </h3>
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-950 text-amber-300 border border-amber-700 font-bold">
+                      EXCLUSIVO ADMIN
                     </span>
-                  </h3>
+                  </div>
                   <p className="text-xs text-slate-300">
                     Historial de accesos e ingresos registrados con fecha, hora exacta, seudónimo y dispositivo.
                   </p>
                 </div>
               </div>
 
-              <button
-                type="button"
-                onClick={loadVisitors}
-                disabled={isRefreshing}
-                className="self-start sm:self-auto px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700 text-xs font-mono font-bold flex items-center space-x-1.5 transition-colors"
-              >
-                <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-cyan-400' : ''}`} />
-                <span>Actualizar</span>
-              </button>
+              <div className="flex items-center space-x-2 self-start sm:self-auto">
+                <button
+                  type="button"
+                  onClick={loadVisitors}
+                  disabled={isRefreshing}
+                  className="px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700 text-xs font-mono font-bold flex items-center space-x-1.5 transition-colors"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-cyan-400' : ''}`} />
+                  <span>Actualizar</span>
+                </button>
+              </div>
             </div>
 
             {/* Buscador y Resumen */}
@@ -487,7 +684,7 @@ export default function OnlineUsersBox({
 
                       {/* Seudónimo / Identidad */}
                       <div className="flex items-center space-x-2 min-w-[170px]">
-                        {renderFlag(v.country, v.flag)}
+                        <CountryFlag country={v.country} flag={v.flag} className="w-4 h-3" />
                         <span className="font-sans font-bold text-white text-xs sm:text-sm">
                           {v.visitorAlias}
                         </span>
@@ -511,8 +708,9 @@ export default function OnlineUsersBox({
 
             {/* Pie del Modal */}
             <div className="pt-2 border-t border-slate-800 flex items-center justify-between text-[11px] font-mono text-slate-400">
-              <span className="text-slate-500">
-                Auditoría en vivo de accesos a Expediente Perú
+              <span className="text-slate-500 flex items-center space-x-1.5">
+                <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
+                <span>Auditoría privada protegida con Bóveda SHA-256</span>
               </span>
               <button
                 type="button"
@@ -527,6 +725,6 @@ export default function OnlineUsersBox({
         </div>
       )}
 
-    </div>
+    </>
   );
 }
