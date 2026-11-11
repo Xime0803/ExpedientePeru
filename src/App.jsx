@@ -403,75 +403,104 @@ export default function App() {
         {currentTab === 'expedientes' && (
           <div className="space-y-8">
             
-            {/* Friendly Senior-Optimized Hero Banner */}
-            <div className="relative rounded-2xl overflow-hidden border-2 border-slate-600 bg-gradient-to-br from-red-950/70 via-[#131b2c] to-[#0c121e] p-6 sm:p-8 lg:p-10 shadow-2xl">
-              <div className="max-w-4xl space-y-4">
+            {/* Friendly Senior-Optimized Hero Banner with Photo */}
+            <div className="relative rounded-2xl overflow-hidden border-2 border-slate-600 bg-gradient-to-br from-red-950/70 via-[#131b2c] to-[#0c121e] p-6 sm:p-8 lg:p-9 shadow-2xl">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
                 
-                {/* Official Community Badge */}
-                <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-red-950 text-red-200 border-2 border-red-700 text-xs sm:text-sm font-bold">
-                  <Flame className="w-4 h-4 text-amber-400 shrink-0" />
-                  <span>COMUNIDAD OFICIAL • YOUTUBE @XimeFer8322 & TIKTOK @epicclips_83</span>
-                </div>
+                {/* Columna Izquierda: Información, Guía de 3 Pasos y Botones */}
+                <div className="lg:col-span-8 space-y-4">
+                  
+                  {/* Official Community Badge */}
+                  <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-red-950 text-red-200 border-2 border-red-700 text-xs sm:text-sm font-bold">
+                    <Flame className="w-4 h-4 text-amber-400 shrink-0" />
+                    <span>COMUNIDAD OFICIAL • YOUTUBE @XimeFer8322 & TIKTOK @epicclips_83</span>
+                  </div>
 
-                <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight leading-tight">
-                  Archivos & Crónicas Reales del <span className="text-red-500">Perú</span>
-                </h1>
+                  <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight leading-tight">
+                    Archivos & Crónicas Reales del <span className="text-red-500">Perú</span>
+                  </h1>
 
-                <p className="text-base sm:text-lg lg:text-xl text-slate-200 leading-relaxed max-w-3xl font-medium">
-                  Bienvenido a este espacio de lectura, memoria y análisis respetuoso de sucesos históricos del Perú. Aquí podrás leer cada investigación con letra clara y grande, compartir tus recuerdos de aquellos años y proponer qué historia grabaremos en video.
-                </p>
+                  <p className="text-base sm:text-lg text-slate-200 leading-relaxed font-medium">
+                    Bienvenido a este espacio de lectura, memoria y análisis respetuoso de sucesos históricos del Perú. Aquí podrás leer cada investigación con letra clara y grande, compartir tus recuerdos de aquellos años y proponer qué historia grabaremos en video.
+                  </p>
 
-                {/* 3-Step Reading Guide for Seniors */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-3 pb-2">
-                  <div className="bg-[#0b101c]/90 border border-slate-700 rounded-xl p-3.5 flex items-start space-x-3">
-                    <span className="text-2xl shrink-0">📖</span>
-                    <div>
-                      <p className="text-sm font-extrabold text-white">1. Elige una Historia</p>
-                      <p className="text-xs text-slate-300 leading-relaxed mt-0.5">
-                        Toca el botón <strong>«Leer Expediente»</strong> en cualquier recuadro.
-                      </p>
+                  {/* 3-Step Reading Guide for Seniors */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 pb-1">
+                    <div className="bg-[#0b101c]/90 border border-slate-700 rounded-xl p-3.5 flex items-start space-x-3">
+                      <span className="text-2xl shrink-0">📖</span>
+                      <div>
+                        <p className="text-sm font-extrabold text-white">1. Elige una Historia</p>
+                        <p className="text-xs text-slate-300 leading-relaxed mt-0.5">
+                          Toca el botón <strong>«Leer Expediente»</strong> en cualquier recuadro.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="bg-[#0b101c]/90 border border-slate-700 rounded-xl p-3.5 flex items-start space-x-3">
+                      <span className="text-2xl shrink-0">💬</span>
+                      <div>
+                        <p className="text-sm font-extrabold text-white">2. Comparte tus Recuerdos</p>
+                        <p className="text-xs text-slate-300 leading-relaxed mt-0.5">
+                          Escribe tus testimonios o teorías con tu seudónimo seguro.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="bg-[#0b101c]/90 border border-slate-700 rounded-xl p-3.5 flex items-start space-x-3">
+                      <span className="text-2xl shrink-0">🗳️</span>
+                      <div>
+                        <p className="text-sm font-extrabold text-white">3. Ayúdanos a Grabar</p>
+                        <p className="text-xs text-slate-300 leading-relaxed mt-0.5">
+                          Vota las historias para que salgan en YouTube y TikTok.
+                        </p>
+                      </div>
                     </div>
                   </div>
 
-                  <div className="bg-[#0b101c]/90 border border-slate-700 rounded-xl p-3.5 flex items-start space-x-3">
-                    <span className="text-2xl shrink-0">💬</span>
-                    <div>
-                      <p className="text-sm font-extrabold text-white">2. Comparte tus Recuerdos</p>
-                      <p className="text-xs text-slate-300 leading-relaxed mt-0.5">
-                        Escribe tus testimonios o teorías con tu seudónimo seguro.
-                      </p>
-                    </div>
-                  </div>
+                  {/* Primary Action Buttons */}
+                  <div className="pt-2 flex flex-wrap gap-4 text-sm sm:text-base font-extrabold">
+                    <button 
+                      onClick={() => setCurrentTab('recomendaciones')}
+                      className="px-6 py-3.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black flex items-center space-x-2.5 shadow-xl shadow-amber-950/50 transition-all border-2 border-amber-300 focus:outline-none focus:ring-4 focus:ring-amber-400/50"
+                    >
+                      <Sparkles className="w-5 h-5 text-slate-950 shrink-0" />
+                      <span>Recomendar Caso para YouTube / TikTok</span>
+                    </button>
 
-                  <div className="bg-[#0b101c]/90 border border-slate-700 rounded-xl p-3.5 flex items-start space-x-3">
-                    <span className="text-2xl shrink-0">🗳️</span>
-                    <div>
-                      <p className="text-sm font-extrabold text-white">3. Ayúdanos a Grabar</p>
-                      <p className="text-xs text-slate-300 leading-relaxed mt-0.5">
-                        Vota las historias para que salgan en YouTube y TikTok.
-                      </p>
+                    <button 
+                      onClick={() => setIsSupportOpen(true)}
+                      className="px-6 py-3.5 rounded-xl bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white flex items-center space-x-2.5 shadow-xl shadow-red-950 transition-all border-2 border-red-400 focus:outline-none focus:ring-4 focus:ring-red-500/50"
+                    >
+                      <Heart className="w-5 h-5 fill-white shrink-0" />
+                      <span>Apoyo Voluntario (Yape / Plin / Dale)</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Columna Derecha: Recuadro con la Imagen de la Sra. con la Bandera del Perú */}
+                <div className="lg:col-span-4 flex justify-center lg:justify-end">
+                  <div className="w-full max-w-sm rounded-2xl overflow-hidden border-2 border-amber-500/70 bg-[#090d16] shadow-2xl shadow-red-950/40 relative group">
+                    <div className="relative overflow-hidden aspect-[3/4] max-h-[420px]">
+                      <img 
+                        src="/images/peru-mujer-bandera.jpg" 
+                        alt="Mujer peruana portando con orgullo la bandera del Perú"
+                        className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-700"
+                        loading="eager"
+                      />
+                      {/* Degradado y Título en la Base de la Imagen */}
+                      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#070b14] via-[#070b14]/85 to-transparent p-4 pt-10 text-center">
+                        <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-red-950/90 border border-red-600/80 text-[11px] font-mono font-bold text-red-200 mb-1">
+                          <CountryFlag country="Perú" flag="🇵🇪" className="w-4 h-3" />
+                          <span>MEMORIA & DIGNIDAD PERUANA</span>
+                        </div>
+                        <p className="text-xs sm:text-sm text-slate-200 font-sans font-extrabold leading-snug">
+                          Crónicas e historias vivas de todas las provincias del Perú
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Primary Action Buttons */}
-                <div className="pt-2 flex flex-wrap gap-4 text-sm sm:text-base font-extrabold">
-                  <button 
-                    onClick={() => setCurrentTab('recomendaciones')}
-                    className="px-6 py-3.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black flex items-center space-x-2.5 shadow-xl shadow-amber-950/50 transition-all border-2 border-amber-300 focus:outline-none focus:ring-4 focus:ring-amber-400/50"
-                  >
-                    <Sparkles className="w-5 h-5 text-slate-950 shrink-0" />
-                    <span>Recomendar Caso para YouTube / TikTok</span>
-                  </button>
-
-                  <button 
-                    onClick={() => setIsSupportOpen(true)}
-                    className="px-6 py-3.5 rounded-xl bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white flex items-center space-x-2.5 shadow-xl shadow-red-950 transition-all border-2 border-red-400 focus:outline-none focus:ring-4 focus:ring-red-500/50"
-                  >
-                    <Heart className="w-5 h-5 fill-white shrink-0" />
-                    <span>Apoyo Voluntario (Yape / Plin / Dale)</span>
-                  </button>
-                </div>
               </div>
             </div>
 
