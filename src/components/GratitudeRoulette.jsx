@@ -12,6 +12,7 @@ import {
   Flame,
   Award
 } from 'lucide-react';
+import CountryFlag from './CountryFlag';
 
 export default function GratitudeRoulette({ 
   supporters = [], 
@@ -216,7 +217,7 @@ export default function GratitudeRoulette({
                     {/* Left: Supporter Details */}
                     <div className="space-y-1.5">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-xl sm:text-2xl">{item.countryFlag || "🇵🇪"}</span>
+                        <CountryFlag country={item.location || 'Perú'} flag={item.countryFlag} className="w-6 h-4" />
                         
                         <h4 className="text-base sm:text-lg font-black text-white tracking-tight flex items-center space-x-1.5">
                           <span>{item.name}</span>
