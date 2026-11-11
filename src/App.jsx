@@ -13,6 +13,7 @@ import UserRegisterModal from './components/UserRegisterModal';
 import GratitudeRoulette from './components/GratitudeRoulette';
 import AdminGratitudeModal from './components/AdminGratitudeModal';
 import OnlineUsersBox from './components/OnlineUsersBox';
+import CountryFlag from './components/CountryFlag';
 import { initialCases, initialNews } from './data/casesData';
 import { 
   fetchSupporters, 
@@ -384,7 +385,7 @@ export default function App() {
         {userProfile && (
           <div className="mb-6 bg-[#121927] border-2 border-slate-700 px-5 py-3.5 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-sm sm:text-base shadow-md">
             <div className="flex items-center space-x-3 text-slate-200">
-              <span className="text-2xl" role="img" aria-label="Bandera">{userProfile.flag}</span>
+              <CountryFlag country={userProfile.country} flag={userProfile.flag} className="w-7 h-5" />
               <span>
                 Conectado como: <strong className="text-white font-extrabold text-base sm:text-lg">@{userProfile.nickname}</strong> <span className="text-slate-400">({userProfile.country})</span>
               </span>

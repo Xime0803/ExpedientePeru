@@ -4,6 +4,7 @@ import {
   MessageSquare, Award, Send, Heart, Video, Smartphone, Sparkles, 
   Type, Menu, X, ChevronRight, UserCheck, Globe, HelpCircle 
 } from 'lucide-react';
+import CountryFlag from './CountryFlag';
 
 export default function Header({ 
   currentTab, 
@@ -33,19 +34,19 @@ export default function Header({
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-[#080d18]/98 backdrop-blur-md border-b-2 border-slate-700 shadow-xl transition-all">
+    <header className="sticky top-0 z-40 bg-[#080d18]/98 backdrop-blur-md border-b-2 border-slate-700 shadow-2xl transition-all">
       
-      {/* Barra Superior de Ayuda Visual, Canales y Donaciones */}
-      <div className="bg-[#101726] border-b border-slate-700 px-3 sm:px-6 py-2 flex flex-wrap items-center justify-between gap-2.5 text-xs">
+      {/* 1. BARRA SUPERIOR DE AYUDA VISUAL, CANALES Y DONACIONES */}
+      <div className="bg-[#101726] border-b border-slate-700 px-3 sm:px-6 py-2 flex flex-wrap items-center justify-between gap-3 text-xs">
         
-        {/* Canales Oficiales para Personas Mayores */}
-        <div className="flex items-center space-x-2 shrink-0">
+        {/* Canales Oficiales para Seguidores */}
+        <div className="flex items-center gap-2 shrink-0">
           <span className="hidden sm:inline font-bold text-slate-300">Canales Oficiales:</span>
           <a
             href="https://www.youtube.com/@XimeFer8322"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-extrabold transition-all text-xs shadow-sm shadow-red-950"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-black transition-all text-xs shadow-md shadow-red-950 shrink-0"
             title="Abrir canal oficial de YouTube @XimeFer8322"
           >
             <Video className="w-4 h-4 shrink-0" />
@@ -56,7 +57,7 @@ export default function Header({
             href="https://www.tiktok.com/@epicclips_83"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-cyan-300 border border-slate-600 font-extrabold transition-all text-xs shadow-sm"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-cyan-300 border border-slate-600 font-black transition-all text-xs shadow-sm shrink-0"
             title="Abrir canal oficial de TikTok @epicclips_83"
           >
             <Smartphone className="w-4 h-4 text-cyan-400 shrink-0" />
@@ -65,17 +66,17 @@ export default function Header({
         </div>
 
         {/* CONTROLES DE ACCESIBILIDAD Y TAMAÑO DE LETRA (Amigable para Adultos Mayores) */}
-        <div className="flex items-center space-x-2 shrink-0">
+        <div className="flex items-center gap-2.5 shrink-0 ml-auto">
           
           {/* Selector Explícito de Tamaño de Letra */}
-          <div className="flex items-center bg-[#070b14] border-2 border-amber-500/60 rounded-xl p-1 shadow-inner">
-            <span className="hidden lg:flex items-center text-[11px] font-bold text-amber-300 px-2 select-none">
-              <Type className="w-3.5 h-3.5 mr-1 text-amber-400" />
+          <div className="flex items-center bg-[#070b14] border-2 border-amber-500/70 rounded-xl p-1 shadow-inner shrink-0">
+            <span className="hidden lg:flex items-center text-[11px] font-bold text-amber-300 px-2 select-none shrink-0">
+              <Type className="w-3.5 h-3.5 mr-1 text-amber-400 shrink-0" />
               Tamaño de Letra:
             </span>
             <button
               onClick={() => setFontScale('normal')}
-              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all shrink-0 ${
                 fontScale === 'normal'
                   ? 'bg-amber-400 text-slate-950 font-black shadow-sm'
                   : 'text-slate-300 hover:text-white'
@@ -86,7 +87,7 @@ export default function Header({
             </button>
             <button
               onClick={() => setFontScale('large')}
-              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all shrink-0 ${
                 fontScale === 'large'
                   ? 'bg-amber-400 text-slate-950 font-black shadow-sm'
                   : 'text-slate-300 hover:text-white'
@@ -97,7 +98,7 @@ export default function Header({
             </button>
             <button
               onClick={() => setFontScale('xlarge')}
-              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all shrink-0 ${
                 fontScale === 'xlarge'
                   ? 'bg-amber-400 text-slate-950 font-black shadow-sm'
                   : 'text-slate-300 hover:text-white'
@@ -111,7 +112,7 @@ export default function Header({
           {/* Botón de Apoyo Voluntario */}
           <button
             onClick={onOpenSupport}
-            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-red-600 via-rose-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white font-extrabold text-xs shadow-md shadow-red-950/60 transition-all border border-red-400/40"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-red-600 via-rose-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white font-extrabold text-xs shadow-md shadow-red-950/60 transition-all border border-red-400/50 shrink-0"
             title="Apoyo voluntario por Yape, Plin o Dale al 916839878"
           >
             <Heart className="w-4 h-4 fill-white shrink-0" />
@@ -120,34 +121,66 @@ export default function Header({
         </div>
       </div>
 
-      {/* Barra Principal de Navegación */}
-      <div className="max-w-7xl mx-auto px-3 sm:px-6 py-3 flex items-center justify-between gap-4">
+      {/* 2. BARRA PRINCIPAL: LOGOTIPO & IDENTIDAD */}
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 py-3.5 flex items-center justify-between gap-4">
         
         {/* Logotipo y Título de la Plataforma */}
         <div 
           onClick={() => handleTabClick('expedientes')}
-          className="flex items-center space-x-3 cursor-pointer group select-none shrink-0"
+          className="flex items-center gap-3.5 cursor-pointer group select-none shrink-0"
         >
-          <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-br from-red-600 via-red-700 to-amber-600 flex items-center justify-center shadow-lg shadow-red-950/60 border-2 border-red-400/50 group-hover:scale-105 transition-transform shrink-0">
-            <ShieldAlert className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-red-600 via-red-700 to-amber-600 flex items-center justify-center shadow-lg shadow-red-950/60 border-2 border-red-400/50 group-hover:scale-105 transition-transform shrink-0">
+            <ShieldAlert className="w-7 h-7 text-white" />
           </div>
           <div>
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center gap-2">
               <span className="font-black text-xl sm:text-2xl tracking-tight text-white font-mono group-hover:text-red-400 transition-colors">
                 EXPEDIENTE<span className="text-red-500 font-extrabold">.PE</span>
               </span>
-              <span className="text-[10px] sm:text-xs font-mono uppercase px-2 py-0.5 rounded-md bg-red-950 text-red-200 border border-red-600 font-bold">
+              <span className="text-[10px] sm:text-xs font-mono uppercase px-2 py-0.5 rounded-md bg-red-950 text-red-200 border border-red-600 font-extrabold">
                 PERÚ OFICIAL
               </span>
             </div>
-            <p className="text-xs sm:text-sm text-slate-200 font-medium tracking-wide truncate max-w-[220px] sm:max-w-none">
+            <p className="text-xs sm:text-sm text-slate-300 font-medium tracking-wide">
               Investigaciones Periodísticas & Casos Reales
             </p>
           </div>
         </div>
 
-        {/* Pestañas de Navegación de Escritorio (Grandes y Claras) */}
-        <nav className="hidden xl:flex items-center space-x-2 overflow-x-auto py-1 scrollbar-none">
+        {/* Lado Derecho: Identidad y Menú Móvil */}
+        <div className="flex items-center gap-3 shrink-0">
+          
+          {/* Botón de Seudónimo con Bandera Real Nítida */}
+          <button
+            onClick={onOpenRegister}
+            title="Toca para cambiar o ver tu seudónimo y país de origen"
+            className="flex items-center gap-3 bg-[#121927] hover:bg-slate-800 border-2 border-slate-600 hover:border-amber-400 px-4 py-2 rounded-xl transition-all shadow-md touch-target shrink-0"
+          >
+            <CountryFlag country={userProfile?.country || 'Perú'} flag={userProfile?.flag} className="w-6 h-4" />
+            <div className="text-left font-sans">
+              <p className="text-[10px] text-slate-400 font-bold uppercase leading-tight font-mono">MI SEUDÓNIMO</p>
+              <p className="text-xs sm:text-sm text-amber-300 font-extrabold truncate max-w-[150px]">
+                {userProfile?.nickname ? userProfile.nickname : 'Identificarme'}
+              </p>
+            </div>
+          </button>
+
+          {/* Botón Móvil de Menú en Pantallas Pequeñas */}
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="md:hidden px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border-2 border-slate-600 text-white flex items-center gap-2 transition-colors touch-target shadow-md shrink-0"
+            aria-label="Abrir menú de secciones"
+          >
+            {mobileMenuOpen ? <X className="w-6 h-6 text-red-400" /> : <Menu className="w-6 h-6 text-amber-400" />}
+            <span className="text-xs font-bold font-mono">MENÚ</span>
+          </button>
+        </div>
+
+      </div>
+
+      {/* 3. FILA DEDICADA DE PESTAÑAS DE NAVEGACIÓN (NUNCA SE PEGAN NI SE APLASTAN) */}
+      <nav className="bg-[#0b101d] border-t border-slate-800/90 shadow-inner">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2 flex items-center gap-2.5 overflow-x-auto scrollbar-none">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = currentTab === item.id;
@@ -155,96 +188,37 @@ export default function Header({
               <button
                 key={item.id}
                 onClick={() => handleTabClick(item.id)}
-                className={`relative px-4 py-2.5 rounded-xl font-bold flex items-center space-x-2 transition-all whitespace-nowrap text-sm touch-target ${
+                className={`shrink-0 px-4 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all whitespace-nowrap text-xs sm:text-sm touch-target border-2 select-none ${
                   isActive 
-                    ? 'bg-red-600 text-white shadow-lg shadow-red-950 border-2 border-red-400 scale-[1.02]' 
+                    ? 'bg-red-600 text-white shadow-lg shadow-red-950 border-red-400 font-black' 
                     : item.highlight
-                    ? 'bg-amber-500/20 text-amber-200 hover:bg-amber-500/30 border-2 border-amber-500/60'
-                    : 'text-slate-200 hover:text-white hover:bg-slate-800/90 border-2 border-slate-700/60'
+                    ? 'bg-amber-500/15 text-amber-200 hover:bg-amber-500/25 border-amber-500/70 hover:border-amber-400'
+                    : 'bg-[#121927] text-slate-200 hover:text-white hover:bg-slate-800 border-slate-700 hover:border-slate-500'
                 }`}
               >
                 <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : item.highlight ? 'text-amber-400' : 'text-slate-300'}`} />
-                <span>{item.label}</span>
+                <span className="tracking-wide">{item.label}</span>
                 {item.count && (
-                  <span className={`text-xs font-mono px-2 py-0.5 rounded-full ${
+                  <span className={`text-xs font-mono font-bold px-2 py-0.5 rounded-full shrink-0 ${
                     isActive ? 'bg-red-950 text-white border border-red-400' : 'bg-slate-800 text-slate-200 border border-slate-600'
                   }`}>
                     {item.count}
                   </span>
                 )}
                 {item.badge && (
-                  <span className="w-5 h-5 text-xs rounded-full bg-red-600 text-white font-mono flex items-center justify-center animate-bounce">
+                  <span className="w-5 h-5 text-xs rounded-full bg-red-600 text-white font-mono flex items-center justify-center animate-bounce shrink-0">
                     {item.badge}
                   </span>
                 )}
               </button>
             );
           })}
-        </nav>
-
-        {/* Lado Derecho: Identidad y Menú Móvil */}
-        <div className="flex items-center space-x-2.5">
-          
-          {/* Botón de Seudónimo (Escritorio) */}
-          <button
-            onClick={onOpenRegister}
-            title="Toca para cambiar o ver tu seudónimo y país de origen"
-            className="hidden sm:flex items-center space-x-2.5 bg-[#121927] hover:bg-slate-800 border-2 border-slate-600 hover:border-amber-400 px-3.5 py-2 rounded-xl transition-all shadow-md touch-target"
-          >
-            <span className="text-2xl shrink-0">{userProfile?.flag || '🇵🇪'}</span>
-            <div className="text-left font-sans">
-              <p className="text-[10px] text-slate-400 font-bold uppercase leading-tight font-mono">MI SEUDÓNIMO</p>
-              <p className="text-xs sm:text-sm text-amber-300 font-extrabold truncate max-w-[140px]">
-                {userProfile?.nickname ? userProfile.nickname : 'Identificarme'}
-              </p>
-            </div>
-          </button>
-
-          {/* Botón Móvil de Menú (Grande para dedos de adultos mayores) */}
-          <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="xl:hidden px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border-2 border-slate-600 text-white flex items-center space-x-2 transition-colors touch-target shadow-md"
-            aria-label="Abrir menú de secciones"
-          >
-            {mobileMenuOpen ? <X className="w-6 h-6 text-red-400" /> : <Menu className="w-6 h-6 text-amber-400" />}
-            <span className="text-xs font-bold font-mono">SECCIONES</span>
-          </button>
         </div>
+      </nav>
 
-      </div>
-
-      {/* Barra Rápida Horizontal para Móviles y Tablets */}
-      <div className="xl:hidden bg-[#0a0f1d] border-t border-slate-700 px-2.5 py-2 overflow-x-auto flex space-x-2 scrollbar-none">
-        {navItems.map((item) => {
-          const Icon = item.icon;
-          const isActive = currentTab === item.id;
-          return (
-            <button
-              key={item.id}
-              onClick={() => handleTabClick(item.id)}
-              className={`px-3.5 py-2.5 rounded-xl text-xs font-bold flex items-center space-x-2 shrink-0 transition-all border-2 touch-target ${
-                isActive
-                  ? 'bg-red-600 text-white shadow-md shadow-red-950 border-red-400'
-                  : item.highlight
-                  ? 'bg-amber-950/40 text-amber-300 border-amber-500/60'
-                  : 'bg-slate-900 text-slate-200 border-slate-700'
-              }`}
-            >
-              <Icon className="w-4 h-4 shrink-0" />
-              <span>{item.label}</span>
-              {item.badge && (
-                <span className="w-4 h-4 text-[10px] rounded-full bg-red-600 text-white flex items-center justify-center">
-                  {item.badge}
-                </span>
-              )}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Menú Desplegable Completo para Móviles */}
+      {/* 4. MENÚ DESPLEGABLE COMPLETO PARA MÓVILES */}
       {mobileMenuOpen && (
-        <div className="xl:hidden fixed inset-x-0 top-[120px] bottom-0 z-50 bg-[#090d18]/98 backdrop-blur-xl p-5 overflow-y-auto space-y-4 border-t-2 border-red-500/60 animate-in slide-in-from-top-2 duration-200">
+        <div className="md:hidden fixed inset-x-0 top-[125px] bottom-0 z-50 bg-[#090d18]/98 backdrop-blur-xl p-5 overflow-y-auto space-y-4 border-t-2 border-red-500/60 animate-in slide-in-from-top-2 duration-200">
           
           {/* Identidad en Menú Móvil */}
           <div 
@@ -254,8 +228,8 @@ export default function Header({
             }}
             className="bg-[#121927] border-2 border-slate-600 p-4 rounded-2xl flex items-center justify-between cursor-pointer hover:border-amber-400 transition-colors shadow-lg"
           >
-            <div className="flex items-center space-x-3">
-              <span className="text-3xl shrink-0">{userProfile?.flag || '🇵🇪'}</span>
+            <div className="flex items-center gap-3">
+              <CountryFlag country={userProfile?.country || 'Perú'} flag={userProfile?.flag} className="w-8 h-5" />
               <div>
                 <p className="text-xs font-mono text-slate-400 uppercase font-bold">Tu Seudónimo y País</p>
                 <p className="text-base font-extrabold text-amber-300">
@@ -288,11 +262,11 @@ export default function Header({
                       : 'bg-[#121927] text-slate-100 border-slate-700 hover:border-slate-500'
                   }`}
                 >
-                  <div className="flex items-center space-x-3.5">
+                  <div className="flex items-center gap-3.5">
                     <Icon className="w-6 h-6 text-amber-400 shrink-0" />
                     <span className="text-base sm:text-lg">{item.label}</span>
                   </div>
-                  <ChevronRight className="w-5 h-5 text-slate-400" />
+                  <ChevronRight className="w-5 h-5 text-slate-400 shrink-0" />
                 </button>
               );
             })}
@@ -305,7 +279,7 @@ export default function Header({
                 setMobileMenuOpen(false);
                 onOpenSupport();
               }}
-              className="w-full py-4 px-4 bg-gradient-to-r from-red-600 via-rose-600 to-amber-600 text-white font-extrabold text-base rounded-2xl shadow-xl flex items-center justify-center space-x-2 border-2 border-red-400/50"
+              className="w-full py-4 px-4 bg-gradient-to-r from-red-600 via-rose-600 to-amber-600 text-white font-extrabold text-base rounded-2xl shadow-xl flex items-center justify-center gap-2 border-2 border-red-400/50"
             >
               <Heart className="w-5 h-5 fill-white shrink-0" />
               <span>Apoyo Voluntario al Canal (Yape / Plin / Dale)</span>
