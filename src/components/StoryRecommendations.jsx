@@ -445,15 +445,14 @@ export default function StoryRecommendations({ userProfile, onOpenRegister, onNa
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div className="space-y-2">
             <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-red-950/80 text-red-300 border border-red-700/60 text-xs font-mono font-bold">
-              <Sparkles className="w-4 h-4 text-amber-400" />
-              <span>PROPUESTAS DE LA COMUNIDAD</span>
+              <Globe className="w-4 h-4 text-amber-400" />
+              <span>PROPUESTAS DE LA COMUNIDAD MUNDIAL • YOUTUBE & TIKTOK</span>
             </div>
             <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-              Recomendar Nuevas Historias para el Canal
+              Propón la Mejor Historia de tu Ciudad o País para Crearla en Video
             </h2>
             <p className="text-sm sm:text-base text-slate-200 leading-relaxed max-w-2xl">
-              ¿Conoces un caso real, suceso extraño o leyenda de tu pueblo o provincia en el Perú? 
-              Indícanos si te gustaría verlo como un <strong>video largo en YouTube</strong> o en un <strong>clip rápido en TikTok</strong>. Las historias con más votos serán grabadas primero.
+              ¿Conoces un caso real, enigma criminal, suceso misterioso, leyenda urbana o experiencia impactante ocurrida en tu país, ciudad o región del mundo? Cuéntanosla con tus propias palabras. El equipo de <strong>@XimeFer8322</strong> y <strong>@epicclips_83</strong> revisa todas las propuestas para investigar los archivos y crear los próximos videos en YouTube y TikTok.
             </p>
           </div>
 
@@ -581,7 +580,7 @@ export default function StoryRecommendations({ userProfile, onOpenRegister, onNa
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <h3 className="text-lg sm:text-xl font-bold text-white flex items-center">
             <Sparkles className="w-5 h-5 text-amber-400 mr-2" />
-            Envía tu recomendación de historia
+            Cuéntanos tu mejor historia para crearla en el canal
           </h3>
 
           <button 
@@ -589,21 +588,21 @@ export default function StoryRecommendations({ userProfile, onOpenRegister, onNa
             onClick={onOpenRegister}
             className="text-xs font-mono font-bold px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-600 flex items-center space-x-1.5 self-start sm:self-auto"
           >
-            <span>{userProfile?.flag || '🇵🇪'}</span>
-            <span>{userProfile?.nickname ? `${userProfile.nickname} (${userProfile.country})` : 'Registrar mi Seudónimo'}</span>
+            <span>{userProfile?.flag || '🌎'}</span>
+            <span>{userProfile?.nickname ? `${userProfile.nickname} (${userProfile.country})` : 'Registrar mi Seudónimo y País'}</span>
           </button>
         </div>
 
         <p className="text-xs sm:text-sm text-slate-300">
-          Completa este formulario simple. Nuestro equipo revisará los datos para investigarlos y mencionarte en el video.
+          Abierto a seguidores de cualquier país. Completa este formulario con los detalles del caso. Nuestro equipo revisará los datos para investigarlos, mencionarte en el video y crear la producción.
         </p>
 
         {submitted ? (
           <div className="p-5 bg-emerald-950/60 border-2 border-emerald-500/80 rounded-xl text-center space-y-2">
             <CheckCircle2 className="w-10 h-10 text-emerald-400 mx-auto" />
-            <h4 className="text-base font-bold text-white">¡Muchas gracias por tu recomendación!</h4>
+            <h4 className="text-base font-bold text-white">¡Muchas gracias por compartir tu historia!</h4>
             <p className="text-xs sm:text-sm text-slate-200">
-              Tu historia ha sido registrada con éxito. Aparecerá en la lista de abajo para que los demás seguidores voten por ella.
+              Tu historia ha sido registrada con éxito. Aparecerá en la lista de abajo para que los demás seguidores voten por ella y entre a la lista de producción.
             </p>
           </div>
         ) : (
@@ -618,21 +617,21 @@ export default function StoryRecommendations({ userProfile, onOpenRegister, onNa
                   required
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Ej. El misterio del faro de Salaverry o La monja de Chachapoyas"
+                  placeholder="Ej. El enigma del faro, La casa de los espíritus, El misterio de los Andes..."
                   className="w-full bg-[#0a0d14] border-2 border-slate-700 rounded-xl p-3 text-base text-white focus:outline-none focus:border-red-500 font-sans"
                 />
               </div>
 
               <div>
                 <label className="block text-xs sm:text-sm font-bold text-white mb-1.5">
-                  Lugar o Ciudad en Perú *
+                  Ciudad, Región o País de la Historia *
                 </label>
                 <input
                   type="text"
                   required
                   value={place}
                   onChange={(e) => setPlace(e.target.value)}
-                  placeholder="Ej. Arequipa, Huancayo, Chiclayo..."
+                  placeholder="Ej. Lima, Madrid, Buenos Aires, CDMX, Arequipa, Santiago, Iquitos..."
                   className="w-full bg-[#0a0d14] border-2 border-slate-700 rounded-xl p-3 text-base text-white focus:outline-none focus:border-red-500 font-sans"
                 />
               </div>
@@ -640,7 +639,7 @@ export default function StoryRecommendations({ userProfile, onOpenRegister, onNa
 
             <div>
               <label className="block text-xs sm:text-sm font-bold text-white mb-2">
-                ¿En qué canal te gustaría ver esta historia? *
+                ¿En qué canal te gustaría ver esta historia creada? *
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <button
@@ -653,7 +652,7 @@ export default function StoryRecommendations({ userProfile, onOpenRegister, onNa
                   }`}
                 >
                   <Video className="w-4 h-4 text-red-500" />
-                  <span>Para YouTube (Caso Largo)</span>
+                  <span>Para YouTube (Documental Largo)</span>
                 </button>
 
                 <button
@@ -666,7 +665,7 @@ export default function StoryRecommendations({ userProfile, onOpenRegister, onNa
                   }`}
                 >
                   <Smartphone className="w-4 h-4 text-cyan-400" />
-                  <span>Para TikTok (Clip Rápido)</span>
+                  <span>Para TikTok (Clip Rápido de Impacto)</span>
                 </button>
 
                 <button
@@ -686,14 +685,14 @@ export default function StoryRecommendations({ userProfile, onOpenRegister, onNa
 
             <div>
               <label className="block text-xs sm:text-sm font-bold text-white mb-1.5">
-                Cuéntanos de qué trata y por qué debería ser grabada *
+                Cuéntanos los hechos: ¿qué ocurrió y por qué deberíamos crearla en video? *
               </label>
               <textarea
                 required
                 rows={3}
                 value={storyDetails}
                 onChange={(e) => setStoryDetails(e.target.value)}
-                placeholder="Explica qué pasó, si hay testigos, noticias antiguas o anécdotas de tu familia sobre este suceso..."
+                placeholder="Detalla qué ocurrió, en qué año pasó, qué misterio o injusticia encierra, si existen testigos o noticias, y qué te gustaría que revelemos en el video..."
                 className="w-full bg-[#0a0d14] border-2 border-slate-700 rounded-xl p-3.5 text-base text-white focus:outline-none focus:border-red-500 font-sans resize-none leading-relaxed"
               />
             </div>
@@ -704,10 +703,10 @@ export default function StoryRecommendations({ userProfile, onOpenRegister, onNa
               </span>
               <button
                 type="submit"
-                className="w-full sm:w-auto bg-red-600 hover:bg-red-500 text-white px-7 py-3 rounded-xl font-bold text-sm flex items-center justify-center space-x-2 shadow-lg shadow-red-950 transition-colors"
+                className="w-full sm:w-auto bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white px-7 py-3.5 rounded-xl font-black text-sm flex items-center justify-center space-x-2 shadow-lg shadow-red-950 transition-all border border-red-400/40"
               >
                 <Send className="w-4 h-4" />
-                <span>Publicar mi Recomendación</span>
+                <span>🚀 Enviar mi Historia para Creación en Video</span>
               </button>
             </div>
           </form>

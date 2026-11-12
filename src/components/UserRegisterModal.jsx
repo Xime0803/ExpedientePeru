@@ -12,7 +12,16 @@ export const COUNTRIES = [
   { code: "ES", name: "España", flag: "🇪🇸" },
   { code: "US", name: "Estados Unidos", flag: "🇺🇸" },
   { code: "VE", name: "Venezuela", flag: "🇻🇪" },
-  { code: "OTRO", name: "Otro País", flag: "🌐" }
+  { code: "BR", name: "Brasil", flag: "🇧🇷" },
+  { code: "UY", name: "Uruguay", flag: "🇺🇾" },
+  { code: "PY", name: "Paraguay", flag: "🇵🇾" },
+  { code: "CR", name: "Costa Rica", flag: "🇨🇷" },
+  { code: "GT", name: "Guatemala", flag: "🇬🇹" },
+  { code: "PA", name: "Panamá", flag: "🇵🇦" },
+  { code: "IT", name: "Italia", flag: "🇮🇹" },
+  { code: "JP", name: "Japón", flag: "🇯🇵" },
+  { code: "CA", name: "Canadá", flag: "🇨🇦" },
+  { code: "OTRO", name: "Otro País del Mundo", flag: "🌎" }
 ];
 
 export default function UserRegisterModal({ isOpen, onClose, onSave, currentProfile }) {
@@ -48,13 +57,13 @@ export default function UserRegisterModal({ isOpen, onClose, onSave, currentProf
         {/* Header Icon */}
         <div className="text-center space-y-2">
           <div className="w-14 h-14 bg-red-600/20 border-2 border-red-500 rounded-full flex items-center justify-center mx-auto text-red-400 shadow-lg shadow-red-950">
-            <UserCheck className="w-7 h-7 text-red-500" />
+            <Globe className="w-7 h-7 text-amber-400" />
           </div>
           <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-            Identificación de la Comunidad
+            Comunidad Internacional
           </h2>
-          <p className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-sm mx-auto">
-            Para participar en los comentarios, el chat y recomendar historias, regístrate con tu <strong>seudónimo</strong> y <strong>país</strong>.
+          <p className="text-xs sm:text-sm text-slate-200 leading-relaxed max-w-sm mx-auto">
+            Participa desde cualquier rincón del mundo con tu <strong>seudónimo</strong> y <strong>bandera</strong>. Comenta casos y proponnos la mejor historia de tu país para crearla en video.
           </p>
         </div>
 

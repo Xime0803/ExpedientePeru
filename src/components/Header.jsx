@@ -142,7 +142,7 @@ export default function Header({
               </span>
             </div>
             <p className="text-xs sm:text-sm text-slate-300 font-medium tracking-wide">
-              Investigaciones Periodísticas & Casos Reales
+              Investigaciones Periodísticas • Casos del Perú & del Mundo
             </p>
           </div>
         </div>

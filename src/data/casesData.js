@@ -371,6 +371,72 @@ La familia apeló valientemente la sentencia. El caso escaló hasta la Sala Pena
       { type: "doc", title: "Sentencia de Casación N° 458-2015 de la Corte Suprema de Justicia", note: "Resolución histórica que declaró la atipicidad penal de la posesión campesina" }
     ],
     comments: []
+  },
+  {
+    id: "caso-013",
+    code: "EXP-INT-1972",
+    title: "El Milagro de los Andes: El Vuelo 571 de la FAU y los 72 Días de Supervivencia",
+    region: "Internacional / Sudamérica",
+    city: "Glaciar de las Lágrimas (Frontera Chile / Argentina)",
+    category: "Misterio Urbano",
+    status: "DESCLASIFICADO",
+    badgeColor: "cyan",
+    year: "1972",
+    views: "612.3K",
+    coverImage: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=900&q=80",
+    synopsis: "El 13 de octubre de 1972, el avión que transportaba a un equipo de rugby uruguayo se estrelló en la cordillera a más de 3,500 metros. 72 días a 30 grados bajo cero, avalanchas mortales y la caminata final de Fernando Parrado y Roberto Canessa que asombró al mundo entero.",
+    fullStory: `El 13 de octubre de 1972, un avión Fairchild FH-227D de la Fuerza Aérea Uruguaya que trasladaba al equipo de rugby Old Christians Club hacia Santiago de Chile se estrelló en un risco remoto de la cordillera de los Andes, en el Glaciar de las Lágrimas.
+
+De las 45 personas a bordo, 12 murieron en el impacto inicial y otras fallecieron en los días posteriores debido a las heridas y al frío extremo de hasta 30 grados bajo cero. Al décimo día, a través de una pequeña radio a transistores reparada, los supervivientes escucharon consternados que los gobiernos de Chile, Argentina y Uruguay habían suspendido las tareas de búsqueda y los daban por muertos.
+
+Atrapados sin alimentos en un desierto blanco sin vegetación ni fauna, se enfrentaron a decisiones extremas de subsistencia. Más tarde, un alud sepultó el fuselaje matando a ocho compañeros más. 
+
+Tras semanas de preparativos, en diciembre de 1972, Fernando Parrado y Roberto Canessa emprendieron una travesía a pie sin equipo de montaña profesional a través de picos andinos de más de 4,600 metros de altitud durante 10 días, hasta encontrar al arriero chileno Sergio Catalán en Los Maitenes. 16 jóvenes sobrevivieron en lo que la historia mundial bautizó como 'El Milagro de los Andes'.`,
+    timeline: [
+      { date: "13 Octubre 1972", event: "El avión FAU 571 choca contra el risco andino; 33 personas sobreviven al impacto inicial." },
+      { date: "23 Octubre 1972", event: "Los sobrevivientes escuchan por radio que la búsqueda aérea fue suspendida oficialmente." },
+      { date: "29 Octubre 1972", event: "Un alud de nieve sepulta el fuselaje mientras dormían, cobrando 8 vidas adicionales." },
+      { date: "12 Diciembre 1972", event: "Parrado, Canessa y Vizintín inician la expedición a pie rumbo al oeste hacia Chile." },
+      { date: "22 Diciembre 1972", event: "Encuentro con el arriero Sergio Catalán y rescate final de los 16 supervivientes en helicóptero." }
+    ],
+    evidences: [
+      { type: "doc", title: "Manuscrito de auxilio de Fernando Parrado al arriero Catalán", note: "Nota escrita a lápiz arrojada con una piedra a través del río San José" },
+      { type: "photo", title: "Fotografía de archivo del fuselaje en el Glaciar de las Lágrimas", note: "Registro fotográfico capturado por las patrullas del Cuerpo de Socorro Andino de Chile" }
+    ],
+    comments: []
+  },
+  {
+    id: "caso-014",
+    code: "EXP-INT-2015",
+    title: "El Caso Canserbero: La Desclasificación del Crimen del Poeta del Rap Latino",
+    region: "Internacional / Venezuela",
+    city: "Maracay, Estado Aragua (Venezuela)",
+    category: "Crónica Policial",
+    status: "ESCLARECIDO",
+    badgeColor: "rose",
+    year: "2015 - 2024",
+    views: "780.9K",
+    coverImage: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=900&q=80",
+    synopsis: "La muerte de Tirone González (Canserbero) y Carlos Molnar en enero de 2015 en Maracay fue presentada durante casi una década como homicidio-suicidio. En diciembre de 2023, la Fiscalía desclasificó la confesión de los hermanos Améstica: sedación previa, apuñalamiento premeditado y alteración de la escena mediante sobornos millonarios.",
+    fullStory: `La madrugada del 20 de enero de 2015, en el edificio Camino Real de Maracay (Venezuela), el cuerpo de Tirone José González Orama, conocido mundialmente como 'Canserbero' y considerado una de las voces líricas más influyentes del rap de habla hispana, fue hallado en el pavimento tras precipitarse desde el décimo piso. En el apartamento yacía apuñalado su amigo y productor musical Carlos Molnar.
+
+La investigación inicial del Ministerio Público y el cuerpo policial de la época cerró el expediente apresuradamente bajo la tesis de que Canserbero sufrió un brote psicótico, asesinó a Molnar y posteriormente se quitó la vida lanzándose por la ventana.
+
+Sin embargo, familiares, médicos forenses independientes y millones de seguidores en todo el mundo denunciaron múltiples incongruencias: no existían restos de sangre de Molnar en los pies ni en la ropa de Canserbero, las ventanas tenían los vidrios retirados con precisión y faltaban pertenencias de valor del rapero.
+
+En noviembre de 2023, el Ministerio Público reabrió formalmente el caso, ordenó la exhumación de los restos y realizó autopsias biopsicosociales y de física balística. A finales de diciembre de 2023, Natalia Améstica y su hermano Guillermo confesaron en video haber sedado a las víctimas con un ansiolítico en el té, apuñalado a ambos por disputas económicas y regalías de giras internacionales, y pagado miles de dólares a funcionarios de policía científica (CICPC) para alterar la escena del crimen, haciendo pasar el doble homicidio por un suicidio. El caso representa uno de los expedientes forenses más impactantes y seguidos de la música contemporánea.`,
+    timeline: [
+      { date: "20 Enero 2015", event: "Hallazgo de los cuerpos de Canserbero y Carlos Molnar en Maracay; el caso se cataloga como suicidio." },
+      { date: "2015 - 2022", event: "Movilizaciones internacionales de fanáticos y juristas exigiendo reabrir las pericias forenses." },
+      { date: "Noviembre 2023", event: "El Ministerio Público venezolano reabre la causa y exhuma los restos óseos del artista." },
+      { date: "Diciembre 2023", event: "Confesión grabada de los hermanos Améstica reconociendo la autoría del doble asesinato premeditado." },
+      { date: "Enero 2024", event: "Orden de captura internacional y juicio penal contra los autores materiales e inspectores cómplices." }
+    ],
+    evidences: [
+      { type: "doc", title: "Acta de Exhumación y Peritaje Antropológico Forense (2023)", note: "Constatación de lesiones previas a la caída y ausencia de resistencia física por sedación" },
+      { type: "photo", title: "Planimetría reconstruida del apartamento en el piso 10", note: "Peritajes de física forense que descartaron el salto voluntario por la trayectoria del cuerpo" }
+    ],
+    comments: []
   }
 ];
 
@@ -418,7 +484,7 @@ export const initialNews = [
 ];
 
 export const initialPoll = {
-  question: "¿Cuál de estos casos controversiales reales del Perú debemos investigar a fondo en el próximo video largo de YouTube?",
+  question: "¿Cuál de estos casos impactantes del Perú y del mundo debemos investigar a fondo en el próximo video largo de YouTube?",
   endsIn: "3 días restantes",
   totalVotes: 0,
   options: [

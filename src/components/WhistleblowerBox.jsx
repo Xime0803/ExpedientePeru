@@ -117,7 +117,7 @@ export default function WhistleblowerBox({ userProfile, onOpenRegister }) {
                 Buzón Confidencial del Informante
               </h2>
               <p className="text-xs sm:text-sm text-slate-300">
-                Envía tus testimonios, casos familiares o historias virales de tu barrio o provincia en el Perú.
+                Envía tus testimonios confidenciales, crónicas familiares o historias de tu ciudad o país para que las investiguemos en el canal.
               </p>
             </div>
           </div>

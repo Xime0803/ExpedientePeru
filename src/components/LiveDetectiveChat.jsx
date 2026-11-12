@@ -14,7 +14,7 @@ const initialMessages = [
     badge: "MODERADOR",
     avatar: "🎙️",
     time: "En vivo",
-    text: "¡Bienvenidos a la Sala de Debate oficial de @XimeFer8322 y @epicclips_83! Comparte tus hipótesis, datos de hemeroteca o preguntas con tu seudónimo y país.",
+    text: "¡Bienvenidos a la Sala de Debate oficial de @XimeFer8322 y @epicclips_83! Abierta a seguidores de todo el mundo para debatir teorías, testimonios y proponernos qué historia investigar y crear en video.",
     isBot: true
   }
 ];
