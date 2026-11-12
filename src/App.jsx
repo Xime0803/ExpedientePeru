@@ -30,7 +30,7 @@ import {
 import { 
   Search, Filter, ShieldAlert, Sparkles, MapPin, Flame, MessageSquare, 
   HelpCircle, ExternalLink, Radio, CheckCircle2, Heart, Video, Smartphone,
-  UserCheck 
+  UserCheck, Globe 
 } from 'lucide-react';
 
 export default function App() {
